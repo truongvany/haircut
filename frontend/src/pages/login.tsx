@@ -1,29 +1,45 @@
 import { useState } from "react";
-import api from "../lib/api";
+import api from "../api/client";
+import { setAuth } from "../store/auth";
 
 export default function Login() {
   const [email, setEmail] = useState("owner@haircut.test");
   const [password, setPassword] = useState("123456");
-  const [msg, setMsg] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
 
-  async function handleLogin() {
-    setMsg("Đang đăng nhập...");
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (loading) return;
+    setLoading(true);
+    setErr("");
     try {
-         const res = await api.post("/auth/login", { email, password });
-         localStorage.setItem("token", res.data.token);
-         setMsg("Đăng nhập OK");
-    } catch (err: any) {
-      setMsg(err?.response?.data?.error || "Lỗi đăng nhập");
+      // giả định BE trả { token, user: { uid, role, email } }
+      const { data } = await api.post("/v1/auth/login", { email, password });
+      setAuth(data.token, data.user);
+      location.href = "/services";
+    } catch (e: any) {
+      setErr(e?.response?.data?.error || "Đăng nhập thất bại");
+    } finally {
+      setLoading(false);
     }
   }
 
   return (
-    <div>
-      <h3>Login</h3>
-      <input value={email} onChange={e=>setEmail(e.target.value)} />
-      <input type="password" value={password} onChange={e=>setPassword(e.target.value)} />
-      <button type="button" onClick={handleLogin}>Login</button>
-      <div style={{marginTop:8}}>{msg}</div>
+    <div style={{ maxWidth: 360 }}>
+      <h2>Login</h2>
+      <form onSubmit={submit}>
+        <div style={{ marginBottom: 8 }}>
+          <label>Email</label>
+          <input value={email} onChange={e => setEmail(e.target.value)} style={{ width: "100%" }} />
+        </div>
+        <div style={{ marginBottom: 8 }}>
+          <label>Password</label>
+          <input type="password" value={password} onChange={e => setPassword(e.target.value)} style={{ width: "100%" }} />
+        </div>
+        {err && <div style={{ color: "crimson", marginBottom: 8 }}>{err}</div>}
+        <button disabled={loading}>{loading ? "..." : "Login"}</button>
+      </form>
     </div>
   );
 }

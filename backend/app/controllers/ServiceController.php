@@ -18,7 +18,7 @@ class ServiceController extends Controller
         }
 
         // 2) Lấy salon và kiểm tra quyền sở hữu
-        $salonId = (int)($params['salonId'] ?? 0);
+        $salonId = (int)($params['salon_id'] ?? 0);
         if ($salonId <= 0) {
             return $this->json(['error' => 'Salon not found'], 404);
         }

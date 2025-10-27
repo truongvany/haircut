@@ -1,11 +1,13 @@
+import type { ReactNode } from 'react';
 import { Navigate } from "react-router-dom";
-import { getUser, isLoggedIn, Role } from "../store/auth";
+import { getUser, isLoggedIn } from "../store/auth";
+import type { Role } from "../store/auth";
 
 export default function ProtectedRoute({
   children,
   allow,
 }: {
-  children: JSX.Element;
+  children: ReactNode;
   allow?: Role[];
 }) {
   if (!isLoggedIn()) return <Navigate to="/login" replace />;

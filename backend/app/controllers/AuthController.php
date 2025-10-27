@@ -85,4 +85,64 @@ class AuthController extends Controller
             ]
         ]);
     }
+
+    // GET /api/v1/me
+    public function me()
+    {
+        $me = \App\Core\Auth::user();
+        if (!$me || !isset($me['uid'])) return $this->json(['error'=>'Unauthorized'], 401);
+        $uid = (int)$me['uid'];
+        $pdo = DB::pdo();
+        $st = $pdo->prepare('SELECT id, full_name, email, phone, avatar_url, role_id FROM users WHERE id = ? LIMIT 1');
+        $st->execute([$uid]);
+        $u = $st->fetch(\PDO::FETCH_ASSOC);
+        if (!$u) return $this->json(['error'=>'User not found'], 404);
+        $role = ((int)$u['role_id'] === 1) ? 'admin' : (((int)$u['role_id'] === 2) ? 'salon' : 'customer');
+        return $this->json(['user' => [
+            'id' => (int)$u['id'],
+            'name' => $u['full_name'],
+            'email' => $u['email'],
+            'phone' => $u['phone'] ?? null,
+            'avatar' => $u['avatar_url'] ?? null,
+            'role' => $role
+        ]]);
+    }
+
+    // PUT /api/v1/me
+    public function updateMe()
+    {
+        $me = \App\Core\Auth::user();
+        if (!$me || !isset($me['uid'])) return $this->json(['error'=>'Unauthorized'], 401);
+        $uid = (int)$me['uid'];
+        $body = $this->body();
+        $name = trim($body['name'] ?? $body['full_name'] ?? '');
+        $phone = isset($body['phone']) ? trim($body['phone']) : null;
+        $avatar = isset($body['avatar']) ? trim($body['avatar']) : null;
+        if ($name === '') return $this->json(['error'=>'Name cannot be empty'], 400);
+        $pdo = DB::pdo();
+        $u = $pdo->prepare('UPDATE users SET full_name = ?, phone = ?, avatar_url = ? WHERE id = ?');
+        $u->execute([$name, $phone, $avatar, $uid]);
+        return $this->json(['message'=>'Profile updated']);
+    }
+
+    // PUT /api/v1/me/password
+    public function changePassword()
+    {
+        $me = \App\Core\Auth::user();
+        if (!$me || !isset($me['uid'])) return $this->json(['error'=>'Unauthorized'], 401);
+        $uid = (int)$me['uid'];
+        $body = $this->body();
+        $current = $body['current_password'] ?? '';
+        $new = $body['new_password'] ?? '';
+        if ($current === '' || $new === '') return $this->json(['error'=>'Missing password fields'], 400);
+        $pdo = DB::pdo();
+        $st = $pdo->prepare('SELECT password_hash FROM users WHERE id = ? LIMIT 1');
+        $st->execute([$uid]);
+        $r = $st->fetch(\PDO::FETCH_ASSOC);
+        if (!$r || !password_verify($current, $r['password_hash'])) return $this->json(['error'=>'Current password is incorrect'], 400);
+        $hash = password_hash($new, PASSWORD_BCRYPT);
+        $u = $pdo->prepare('UPDATE users SET password_hash = ? WHERE id = ?');
+        $u->execute([$hash, $uid]);
+        return $this->json(['message'=>'Password changed']);
+    }
 }

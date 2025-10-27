@@ -2,7 +2,8 @@ import axios from "axios";
 import { getToken, clearAuth } from "../store/auth";
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:8080/api",
+  // Default to the Apache/backend path used by this project when VITE_API_URL is not set
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost/haircut/backend/public/api",
   withCredentials: false,
 });
 

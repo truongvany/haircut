@@ -13,7 +13,8 @@ class Controller {
     $ct  = $_SERVER['CONTENT_TYPE'] ?? '';
 
     // debug để soi trong error.log
-    error_log('REQ_CT=' . $ct . ' | RAW=' . $raw);
+        // Log để soi nhanh trong error.log
+        error_log('REQ_CT=' . $ct . ' | RAW=' . $raw);
 
     // JSON chuẩn
     if (stripos($ct, 'application/json') !== false) {

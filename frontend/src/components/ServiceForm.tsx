@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { Service } from "../api/services";
+import type { Service } from "../api/services";
 
 export type ServiceFormValues = {
   name: string;
   price: number;
   durationMin: number;
+  category: string;
   description?: string;
   isActive: boolean;
 };
@@ -24,6 +25,7 @@ export default function ServiceForm({
     name: "",
     price: 0,
     durationMin: 30,
+    category: "khác",
     description: "",
     isActive: true,
   });
@@ -34,6 +36,7 @@ export default function ServiceForm({
         name: initial.name || "",
         price: Number(initial.price || 0),
         durationMin: Number(initial.durationMin || 30),
+        category: initial.category || "khác",
         description: initial.description || "",
         isActive: Boolean(initial.isActive ?? true),
       });
@@ -41,7 +44,7 @@ export default function ServiceForm({
   }, [initial]);
 
   const invalid =
-    !v.name.trim() || v.price <= 0 || v.durationMin <= 0 || v.name.length > 120 || (v.description || "").length > 500;
+  !v.name.trim() || !v.category.trim() || v.price <= 0 || v.durationMin <= 0 || v.name.length > 120 || (v.description || "").length > 500;
 
   return (
     <div style={{ padding: 12, border: "1px solid #ddd", borderRadius: 8 }}>
@@ -49,6 +52,18 @@ export default function ServiceForm({
         <label>
           Tên dịch vụ
           <input value={v.name} onChange={e => setV({ ...v, name: e.target.value })} />
+        </label>
+        <label>
+        Danh mục
+        <select value={v.category} onChange={e => setV({ ...v, category: e.target.value })}>
+         <option value="khác">Khác</option>
+         <option value="cat">Cắt</option>
+        <option value="goi">Gội</option>
+        <option value="uốn">Uốn</option>
+         <option value="nhuộm">Nhuộm</option>
+         <option value="duỗi">Duỗi</option>
+         <option value="tạo kiểu">Tạo kiểu</option>
+        </select>
         </label>
         <label>
           Giá

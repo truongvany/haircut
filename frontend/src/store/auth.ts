@@ -1,5 +1,5 @@
-export type Role = "admin" | "salon";
-export type User = { uid: number; role: Role; email?: string };
+export type Role = "admin" | "salon" | "customer";
+export type User = { id: number; role: Role; email?: string; name?: string };
 
 const TOKEN_KEY = "hc_token";
 const USER_KEY = "hc_user";

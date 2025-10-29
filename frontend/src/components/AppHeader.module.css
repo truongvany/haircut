@@ -1,0 +1,68 @@
+/* frontend/src/components/AppHeader.module.css */
+
+.header {
+  display: flex; /* Sắp xếp các mục theo hàng ngang */
+  align-items: center; /* Căn giữa các mục theo chiều dọc */
+  padding: 10px 20px; /* Thêm khoảng đệm bên trong header */
+  background-color: #282c34; /* Màu nền tối */
+  color: white; /* Màu chữ trắng */
+  border-bottom: 1px solid #444; /* Thêm đường kẻ dưới */
+}
+
+.logo {
+  font-size: 1.5em; /* Kích thước chữ cho logo/tên app */
+  font-weight: bold;
+  margin-right: 20px; /* Khoảng cách bên phải logo */
+  color: #61dafb; /* Màu xanh React cho chữ Haircut */
+  text-decoration: none; /* Bỏ gạch chân link (nếu là link) */
+}
+
+/* Kiểu cho các link điều hướng */
+.navLink {
+  color: white;
+  text-decoration: none;
+  margin: 0 10px; /* Khoảng cách giữa các link */
+  padding: 5px 10px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease; /* Hiệu ứng khi hover */
+}
+
+.navLink:hover {
+  background-color: #555; /* Màu nền khi rê chuột vào link */
+}
+
+/* Phần thông tin user bên phải */
+.userInfo {
+  margin-left: auto; /* Đẩy về cuối bên phải */
+  display: flex;
+  align-items: center;
+  gap: 10px; /* Khoảng cách giữa tên user và nút logout */
+}
+
+.userInfo span {
+  font-size: 0.9em;
+}
+
+.logoutButton {
+  background-color: #dc3545; /* Màu đỏ cho nút logout */
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9em;
+}
+
+.logoutButton:hover {
+  background-color: #c82333;
+}
+
+/* Kiểu cho link login/register */
+.authLink {
+    color: #61dafb;
+    text-decoration: none;
+    margin-left: 10px;
+}
+.authLink:hover {
+    text-decoration: underline;
+}

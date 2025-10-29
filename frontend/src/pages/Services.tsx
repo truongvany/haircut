@@ -80,42 +80,34 @@ export default function ServicesPage() {
   }
 
   return (
-    <div>
-      <h2>Service Management</h2>
+    <div className="card">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h2>Service Management</h2>
+        <div>
+          <button className="btn" onClick={() => setCreating(true)}>Tạo mới</button>
+        </div>
+      </div>
 
       {user?.role === "admin" && (
-        <div style={{ margin: "8px 0" }}>
-          <label>Salon ID: </label>
-          <input
-            type="number"
-            value={salonId}
-            onChange={e => setSalonId(Number(e.target.value))}
-            style={{ width: 120 }}
-          />
+        <div className="form-row" style={{ margin: '12px 0' }}>
+          <label className="small">Salon ID:</label>
+          <input type="number" value={salonId} onChange={e => setSalonId(Number(e.target.value))} style={{ width: 120 }} />
         </div>
       )}
 
-      <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-        <input
-          placeholder="Tìm theo tên..."
-          value={search}
-          onChange={e => {
-            setPage(1);
-            setSearch(e.target.value);
-          }}
-          style={{ minWidth: 260 }}
-        />
-        <button onClick={() => setCreating(true)}>Tạo mới</button>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center' }}>
+        <input placeholder="Tìm theo tên..." value={search} onChange={e => { setPage(1); setSearch(e.target.value); }} style={{ minWidth: 260 }} />
+        <span className="muted small">{total} dịch vụ</span>
       </div>
 
       {creating && (
-        <div style={{ marginBottom: 12 }}>
+        <div style={{ marginBottom: 12 }} className="card">
           <ServiceForm submitting={submitting} onSubmit={onCreate} onCancel={() => setCreating(false)} />
         </div>
       )}
 
       {editing && (
-        <div style={{ marginBottom: 12 }}>
+        <div style={{ marginBottom: 12 }} className="card">
           <ServiceForm
             submitting={submitting}
             initial={editing}
@@ -125,9 +117,9 @@ export default function ServicesPage() {
         </div>
       )}
 
-      <div style={{ border: "1px solid #eee", borderRadius: 8, overflow: "hidden" }}>
+      <div className="card">
         <table width="100%" cellPadding={8}>
-          <thead style={{ background: "#fafafa" }}>
+          <thead>
             <tr>
               <th align="left">Tên</th>
               <th align="right">Giá</th>
@@ -145,14 +137,21 @@ export default function ServicesPage() {
             ) : (
               items.map(s => (
                 <tr key={s.id}>
-                  <td>{s.name}</td>
+                  <td>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <div className="service-name">{s.name}</div>
+                      <div className="service-meta small muted">{s.category || ''}</div>
+                    </div>
+                  </td>
                   <td align="right">{s.price.toLocaleString()}</td>
                   <td align="right">{s.durationMin}</td>
-                  <td align="center">{s.isActive ? "✓" : "✗"}</td>
-                  <td>{s.updatedAt ? new Date(s.updatedAt).toLocaleString() : ""}</td>
-                  <td align="center" style={{ display: "flex", gap: 6, justifyContent: "center" }}>
-                    <button onClick={() => setEditing(s)}>Sửa</button>
-                    <button onClick={() => onDelete(s)}>Xóa</button>
+                  <td align="center"><span className={s.isActive ? 'badge' : 'badge danger'}>{s.isActive ? 'Hiện' : 'Ẩn'}</span></td>
+                  <td>{s.updatedAt ? new Date(s.updatedAt).toLocaleString() : ''}</td>
+                  <td align="center">
+                    <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+                      <button className="btn small" onClick={() => setEditing(s)}>Sửa</button>
+                      <button className="btn small ghost" onClick={() => onDelete(s)}>Xóa</button>
+                    </div>
                   </td>
                 </tr>
               ))
@@ -161,10 +160,10 @@ export default function ServicesPage() {
         </table>
       </div>
 
-      <div style={{ marginTop: 8, display: "flex", gap: 6 }}>
-        <button disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>Trước</button>
-        <span>Trang {page}/{pages}</span>
-        <button disabled={page >= pages} onClick={() => setPage(p => Math.min(pages, p + 1))}>Sau</button>
+      <div style={{ marginTop: 12, display: 'flex', gap: 6, alignItems: 'center' }}>
+        <button className="btn small" disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>Trước</button>
+        <span className="small">Trang {page}/{pages}</span>
+        <button className="btn small" disabled={page >= pages} onClick={() => setPage(p => Math.min(pages, p + 1))}>Sau</button>
       </div>
     </div>
   );

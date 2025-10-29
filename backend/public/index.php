@@ -32,6 +32,8 @@ $router->put('/api/v1/salons/{salon_id}/stylists/{id}', 'App\\Controllers\\Styli
 $router->delete('/api/v1/salons/{salon_id}/stylists/{id}', 'App\\Controllers\\StylistController@delete');
 $router->post('/api/v1/bookings', 'App\\Controllers\\BookingController@create');
 $router->get('/api/v1/bookings',  'App\\Controllers\\BookingController@bySalonDate'); 
+// Availability: GET /api/v1/salons/{salon_id}/availability?date=YYYY-MM-DD&duration_min=30&step=15&stylist_id=123
+$router->get('/api/v1/salons/{salon_id}/availability', 'App\\Controllers\\BookingController@availability');
 $router->get('/api/v1/bookings/{id}', 'App\\Controllers\\BookingController@show');
 $router->get('/api/v1/bookings/mine',  'App\\Controllers\\BookingController@mine');
 $router->put('/api/v1/bookings/{id}/confirm', 'App\\Controllers\\BookingController@confirm');

@@ -47,8 +47,8 @@ export default function ServiceForm({
   !v.name.trim() || !v.category.trim() || v.price <= 0 || v.durationMin <= 0 || v.name.length > 120 || (v.description || "").length > 500;
 
   return (
-    <div style={{ padding: 12, border: "1px solid #ddd", borderRadius: 8 }}>
-      <div style={{ display: "grid", gap: 8 }}>
+    <div className="card">
+      <div style={{ display: 'grid', gap: 8 }}>
         <label>
           Tên dịch vụ
           <input value={v.name} onChange={e => setV({ ...v, name: e.target.value })} />
@@ -65,23 +65,25 @@ export default function ServiceForm({
          <option value="tạo kiểu">Tạo kiểu</option>
         </select>
         </label>
-        <label>
-          Giá
-          <input type="number" value={v.price} onChange={e => setV({ ...v, price: Number(e.target.value) })} />
-        </label>
-        <label>
-          Thời lượng (phút)
-          <input
-            type="number"
-            value={v.durationMin}
-            onChange={e => setV({ ...v, durationMin: Number(e.target.value) })}
-          />
-        </label>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <label style={{ flex: 1 }}>
+            Giá
+            <input type="number" value={v.price} onChange={e => setV({ ...v, price: Number(e.target.value) })} />
+          </label>
+          <label style={{ width: 160 }}>
+            Thời lượng (phút)
+            <input
+              type="number"
+              value={v.durationMin}
+              onChange={e => setV({ ...v, durationMin: Number(e.target.value) })}
+            />
+          </label>
+        </div>
         <label>
           Mô tả
           <textarea value={v.description} onChange={e => setV({ ...v, description: e.target.value })} />
         </label>
-        <label>
+        <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <input
             type="checkbox"
             checked={v.isActive}
@@ -90,11 +92,11 @@ export default function ServiceForm({
           Hiển thị
         </label>
       </div>
-      <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
-        <button onClick={() => onSubmit(v)} disabled={invalid || submitting}>
-          {submitting ? "Đang lưu..." : "Lưu"}
+      <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
+        <button className="btn" onClick={() => onSubmit(v)} disabled={invalid || submitting}>
+          {submitting ? 'Đang lưu...' : 'Lưu'}
         </button>
-        <button onClick={onCancel} type="button">Hủy</button>
+        <button className="btn secondary" onClick={onCancel} type="button">Hủy</button>
       </div>
     </div>
   );

@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../api/client';
-import { listServices } from '../api/services';
-import { listStylists } from '../api/stylists';
-import { listReviews } from '../api/reviews';
+// Using aggregated /v1/salons/:id which returns services, stylists and reviews
 
 export default function SalonDetailPage() {
   const { id } = useParams();
@@ -21,17 +19,13 @@ export default function SalonDetailPage() {
     (async () => {
       setLoading(true);
       try {
-        const [salRes, svcRes, styRes, revRes] = await Promise.all([
-          api.get(`/v1/salons/${salonId}`),
-          listServices(salonId, { limit: 200 }),
-          listStylists(salonId, { limit: 200 }),
-          listReviews(salonId)
-        ]);
+        const res = await api.get(`/v1/salons/${salonId}`);
         if (!mounted) return;
-        setSalon(salRes.data?.salon ?? null);
-        setServices(svcRes.items || []);
-        setStylists(styRes.items || []);
-        setReviews(revRes.items || []);
+        const data = res.data || {};
+        setSalon(data.salon ?? null);
+        setServices(data.services || []);
+        setStylists(data.stylists || []);
+        setReviews(data.reviews || []);
       } catch (e: any) {
         setError(e?.response?.data?.error || 'Không thể tải dữ liệu salon');
       } finally {

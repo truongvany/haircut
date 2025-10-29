@@ -1,3 +1,4 @@
+import styles from './components/AppHeader.module.css'; // Import CSS module
 import { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route, Navigate, Link } from "react-router-dom";
 import Login from "./pages/login";
@@ -11,6 +12,7 @@ import BookingsPage from "./pages/Bookings";
 import BookingHistoryPage from "./pages/BookingHistory";
 const SalonDetailPage = lazy(() => import('./pages/SalonDetail'));
 const NewBookingPage = lazy(() => import('./pages/NewBooking'));
+const AccountPage = lazy(() => import('./pages/Account'));
 import { getUser, clearAuth } from "./store/auth";
 
 
@@ -18,29 +20,44 @@ export default function App() {
   const u = getUser();
   return (
     <BrowserRouter>
-      <div style={{ padding: 24 }}>
-        <header style={{ display: "flex", gap: 16, alignItems: "center", marginBottom: 16 }}>
-          <h1 style={{ margin: 0 }}>Haircut FE (dev)</h1>
-          <Link to="/services">Services</Link>
-          <Link to="/salons">Salons</Link>
-          <Link to="/stylists">Stylists</Link>
-          <Link to="/bookings">Bookings</Link>
-          <Link to="/new-booking">Đặt lịch mới</Link>
-          <Link to="/my-bookings">Lịch sử</Link>
-          <Link to="/register">Đăng ký</Link>
-          <div style={{ marginLeft: "auto" }}>
+      <div className="app-container">
+        <header className={styles.header}>
+          <h1 className={styles.logo}>Haircut</h1>
+          <nav>
+            <Link className={styles.navLink} to="/services">Services</Link>
+            <Link className={styles.navLink} to="/salons">Salons</Link>
+            <Link className={styles.navLink} to="/stylists">Stylists</Link>
+            <Link className={styles.navLink} to="/bookings">Bookings</Link>
+            <Link className={styles.navLink} to="/new-booking">Đặt lịch mới</Link>
+            <Link className={styles.navLink} to="/my-bookings">Lịch sử</Link>
+            <Link className={styles.navLink} to="/account">Tài khoản</Link>
+          </nav>
+          <div className={styles.userInfo}>
             {u ? (
               <>
                 <span style={{ marginRight: 8 }}>{u.email || u.name || `ID ${u.id}`} [{u.role}]</span>
-                <button onClick={() => { clearAuth(); location.href = "/login"; }}>Logout</button>
+                <button className={styles.logoutButton} onClick={() => { clearAuth(); location.href = "/login"; }}>Logout</button>
               </>
-            ) : null}
+            ) : (
+              <>
+                <Link className={styles.authLink} to="/login">Login</Link>
+                <Link className={styles.authLink} to="/register">Register</Link>
+              </>
+            )}
           </div>
         </header>
         <Routes>
           <Route path="/" element={<Navigate to="/services" replace />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route
+            path="/account"
+            element={
+              <Suspense fallback={<div>Đang tải tài khoản...</div>}>
+                <AccountPage />
+              </Suspense>
+            }
+          />
           <Route
             path="/services"
             element={

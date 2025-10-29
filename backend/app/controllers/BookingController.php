@@ -269,6 +269,100 @@ class BookingController extends Controller {
     return $this->json(['items'=>$items]);
   }
 
+    // GET /api/v1/salons/{salon_id}/availability?date=YYYY-MM-DD&duration_min=30&step=15&stylist_id=123
+    public function availability($params){
+        $sid = (int)($params['salon_id'] ?? 0);
+        $date = $_GET['date'] ?? date('Y-m-d');
+        $durationMin = isset($_GET['duration_min']) ? (int)$_GET['duration_min'] : 30;
+        $step = isset($_GET['step']) ? max(5, (int)$_GET['step']) : 15;
+        $sty = isset($_GET['stylist_id']) && $_GET['stylist_id'] !== '' ? (int)$_GET['stylist_id'] : null;
+
+        if ($sid <= 0 || !preg_match('/^\d{4}-\d{2}-\d{2}$/',$date)) {
+            return $this->json(['error'=>'Missing salon_id or invalid date'],400);
+        }
+
+        $pdo = DB::pdo();
+        // Ensure salon exists and get salon hours
+        $st = $pdo->prepare('SELECT id, open_time, close_time FROM salons WHERE id = ? AND status = "published"');
+        $st->execute([$sid]);
+        $salon = $st->fetch();
+        if (!$salon) return $this->json(['error'=>'Salon not found'],404);
+
+        $weekday = (int)date('N', strtotime($date));
+
+        // Check holiday for salon or stylist
+        $holidaySql = 'SELECT 1 FROM holidays WHERE salon_id=? AND off_date=? AND (stylist_id IS NULL';
+        $hArgs = [$sid, $date];
+        if ($sty) { $holidaySql .= ' OR stylist_id = ?'; $hArgs[] = $sty; }
+        $holidaySql .= ') LIMIT 1';
+        $hStmt = $pdo->prepare($holidaySql);
+        $hStmt->execute($hArgs);
+        if ($hStmt->fetch()) return $this->json(['error'=>'Salon or stylist is on holiday that day'],409);
+
+        // Fetch working hours for stylist if available
+        $hours = [];
+        if ($sty) {
+            $whStmt = $pdo->prepare('SELECT start_time, end_time FROM working_hours WHERE salon_id = ? AND weekday = ? AND stylist_id = ?');
+            $whStmt->execute([$sid, $weekday, $sty]);
+            $hours = $whStmt->fetchAll(\PDO::FETCH_ASSOC);
+        }
+        // Fallback to salon open/close if no working_hours
+        if (empty($hours)) {
+            if (empty($salon['open_time']) || empty($salon['close_time'])) {
+                return $this->json(['error'=>'Salon has no working hours configured for this day'],400);
+            }
+            $hours = [['start_time'=>$salon['open_time'], 'end_time'=>$salon['close_time']]];
+        }
+
+        // Fetch existing bookings for the date. If stylist specified, filter by stylist, else fetch all bookings for salon.
+        if ($sty) {
+            $bq = $pdo->prepare("SELECT appointment_at, total_minutes FROM bookings WHERE salon_id=? AND stylist_id=? AND status IN ('pending','confirmed') AND DATE(appointment_at)=?");
+            $bq->execute([$sid, $sty, $date]);
+        } else {
+            $bq = $pdo->prepare("SELECT appointment_at, total_minutes FROM bookings WHERE salon_id=? AND status IN ('pending','confirmed') AND DATE(appointment_at)=?");
+            $bq->execute([$sid, $date]);
+        }
+        $existing = [];
+        while ($r = $bq->fetch(\PDO::FETCH_ASSOC)) {
+            $s = strtotime($r['appointment_at']);
+            $e = $s + ((int)$r['total_minutes'] * 60);
+            $existing[] = ['start'=>$s,'end'=>$e];
+        }
+
+        // Build available slots by iterating each working hours block
+        $slots = [];
+        foreach ($hours as $h) {
+            $blockStart = strtotime($date . ' ' . $h['start_time']);
+            $blockEnd = strtotime($date . ' ' . $h['end_time']);
+            // normalize overnight not supported
+            for ($t = $blockStart; $t + $durationMin*60 <= $blockEnd; $t += $step*60) {
+                $slotStart = $t;
+                $slotEnd = $t + $durationMin*60;
+                // check conflicts with existing bookings
+                $conflict = false;
+                foreach ($existing as $ex) {
+                    if ($slotStart < $ex['end'] && $slotEnd > $ex['start']) { $conflict = true; break; }
+                }
+                if (!$conflict) {
+                    $slots[] = [
+                        'start' => date('Y-m-d H:i:s', $slotStart),
+                        'end' => date('Y-m-d H:i:s', $slotEnd)
+                    ];
+                }
+            }
+        }
+
+        // Also return existing bookings in human-friendly form
+        $bookings = array_map(function($it){
+            return [
+                'appointmentAt' => date('Y-m-d H:i:s', $it['start']),
+                'endsAt' => date('Y-m-d H:i:s', $it['end'])
+            ];
+        }, $existing);
+
+        return $this->json(['slots'=>$slots, 'bookings'=>$bookings]);
+    }
+
     // GET /api/v1/bookings/{id}
     public function show($p){
         $id = (int)($p['id'] ?? 0);

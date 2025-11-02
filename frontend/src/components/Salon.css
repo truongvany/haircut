@@ -1,0 +1,229 @@
+/* Salons.css */
+
+.salons-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 40px 20px;
+}
+
+.salons-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.salons-header {
+  text-align: center;
+  margin-bottom: 50px;
+  animation: fadeInDown 0.8s ease;
+}
+
+.salons-header h2 {
+  color: white;
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.salons-header p {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1.2rem;
+}
+
+/* Loading & Error States */
+.salons-loading,
+.salons-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  animation: fadeIn 0.5s ease;
+}
+
+.salons-loading div,
+.salons-error div {
+  background: white;
+  padding: 40px 60px;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  text-align: center;
+}
+
+.salons-loading div {
+  font-size: 1.2rem;
+  color: #667eea;
+  font-weight: 500;
+}
+
+.salons-error div {
+  color: #e53e3e;
+  font-size: 1.1rem;
+}
+
+/* Salons List */
+.salons-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 25px;
+  animation: fadeInUp 0.8s ease;
+}
+
+.salon-card {
+  background: white;
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+  overflow: hidden;
+}
+
+.salon-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  transform: scaleX(0);
+  transition: transform 0.4s ease;
+}
+
+.salon-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+}
+
+.salon-card:hover::before {
+  transform: scaleX(1);
+}
+
+.salon-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.salon-icon {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  transition: transform 0.3s ease;
+}
+
+.salon-card:hover .salon-icon {
+  transform: rotate(360deg) scale(1.1);
+}
+
+.salon-icon::before {
+  content: '✂️';
+  font-size: 28px;
+}
+
+.salon-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2d3748;
+  margin-bottom: 12px;
+  transition: color 0.3s ease;
+}
+
+.salon-card:hover .salon-name {
+  color: #667eea;
+}
+
+.salon-address {
+  font-size: 0.95rem;
+  color: #718096;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  line-height: 1.6;
+}
+
+.salon-address::before {
+  content: '📍';
+  flex-shrink: 0;
+  font-size: 16px;
+  margin-top: 2px;
+}
+
+.salons-empty {
+  text-align: center;
+  background: white;
+  padding: 80px 40px;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  animation: fadeIn 0.5s ease;
+}
+
+.salons-empty p {
+  font-size: 1.3rem;
+  color: #718096;
+  margin: 0;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .salons-header h2 {
+    font-size: 2rem;
+  }
+
+  .salons-list {
+    grid-template-columns: 1fr;
+  }
+
+  .salon-card {
+    padding: 25px;
+  }
+}
+
+/* Hover effects for links */
+.salon-link:focus {
+  outline: none;
+}
+
+.salon-card:focus-within {
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.5);
+}

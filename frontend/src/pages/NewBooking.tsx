@@ -5,8 +5,8 @@ import { listServices } from '../api/services';
 import type { Service } from '../api/services';
 import { listStylists } from '../api/stylists';
 import type { Stylist } from '../api/stylists';
-// availability endpoint will be used to compute free slots
 import api from '../api/client';
+import '../components/NewBooking.css';
 
 export type CreateBookingPayload = {
     salonId: number;
@@ -35,19 +35,23 @@ async function createBooking(payload: CreateBookingPayload) {
 
 const ServiceSelector = ({ services, selected, onChange }: { services: Service[], selected: { [key: number]: number }, onChange: (id: number, qty: number) => void }) => {
     return (
-        <div>
-            <h4>Chọn dịch vụ:</h4>
-            {services.length === 0 && <p>Chưa có dịch vụ nào.</p>}
+        <div className="service-selector">
+            {services.length === 0 && <p style={{ textAlign: 'center', color: '#718096' }}>Chưa có dịch vụ nào.</p>}
             {services.map(service => (
-                <div key={service.id} style={{ marginBottom: '5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div key={service.id} className="service-item">
                     <input
                         type="number"
                         min={0}
                         value={selected[service.id] || 0}
                         onChange={(e) => onChange(service.id, parseInt(e.target.value, 10) || 0)}
-                        style={{ width: '60px' }}
                     />
-                    <span>{service.name} ({service.durationMin} phút) - {service.price.toLocaleString()}đ</span>
+                    <div className="service-details">
+                        <div className="service-name">{service.name}</div>
+                        <div className="service-meta">
+                            <span className="duration">{service.durationMin} phút</span>
+                            <span className="price">{service.price.toLocaleString()}đ</span>
+                        </div>
+                    </div>
                 </div>
             ))}
         </div>
@@ -60,8 +64,6 @@ export default function NewBookingPage() {
 
     const [salons, setSalons] = useState<Array<{ id: number; name: string }>>([]);
     const [salonId, setSalonId] = useState<number | null>(null);
-    // salonInfo no longer required here; availability endpoint is used
-
     const [availableServices, setAvailableServices] = useState<Service[]>([]);
     const [availableStylists, setAvailableStylists] = useState<Stylist[]>([]);
     const [selectedServices, setSelectedServices] = useState<{ [key: number]: number }>({});
@@ -76,7 +78,6 @@ export default function NewBookingPage() {
     const [error, setError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-    // Load salons initially
     useEffect(() => {
         (async () => {
             try {
@@ -90,7 +91,6 @@ export default function NewBookingPage() {
         })();
     }, []);
 
-    // Load services/stylists when salon changes
     useEffect(() => {
         if (!salonId) return;
         let mounted = true;
@@ -113,7 +113,6 @@ export default function NewBookingPage() {
         return () => { mounted = false; };
     }, [salonId]);
 
-    // Compute subtotal/minutes from selected services
     const computeTotals = () => {
         let totalMin = 0;
         let subtotal = 0;
@@ -127,24 +126,22 @@ export default function NewBookingPage() {
         return { totalMin, subtotal };
     };
 
-    // Compute available slots for a given date
     const computeAvailableSlots = async (sId: number, date: string) => {
         if (!sId || !date) return setAvailableSlots([]);
-            const { totalMin } = computeTotals();
-            if (!totalMin || totalMin <= 0) { setAvailableSlots([]); return; }
-            try {
-                const params: any = { date, duration_min: totalMin };
-                if (selectedStylistId) params.stylist_id = selectedStylistId;
-                const res = await api.get(`/v1/salons/${sId}/availability`, { params });
-                const slotsResp = res.data?.slots || [];
-                const slots = slotsResp.map((s: any) => s.start.substr(11,5));
-                setAvailableSlots(slots);
-            } catch (err: any) {
-                // show error message when holiday or other conflict
-                const msg = err?.response?.data?.error;
-                if (msg) setError(msg);
-                setAvailableSlots([]);
-            }
+        const { totalMin } = computeTotals();
+        if (!totalMin || totalMin <= 0) { setAvailableSlots([]); return; }
+        try {
+            const params: any = { date, duration_min: totalMin };
+            if (selectedStylistId) params.stylist_id = selectedStylistId;
+            const res = await api.get(`/v1/salons/${sId}/availability`, { params });
+            const slotsResp = res.data?.slots || [];
+            const slots = slotsResp.map((s: any) => s.start.substr(11,5));
+            setAvailableSlots(slots);
+        } catch (err: any) {
+            const msg = err?.response?.data?.error;
+            if (msg) setError(msg);
+            setAvailableSlots([]);
+        }
     };
 
     useEffect(() => {
@@ -152,7 +149,6 @@ export default function NewBookingPage() {
         computeAvailableSlots(salonId, appointmentDate);
     }, [salonId, appointmentDate, selectedServices, selectedStylistId]);
 
-    // Voucher apply
     const applyVoucher = async () => {
         if (!voucherCode || !salonId) return setError('Nhập mã voucher');
         try {
@@ -199,7 +195,6 @@ export default function NewBookingPage() {
         try {
             const res = await createBooking(payload);
             setSuccessMessage(`${res.message}. Mã lịch hẹn: ${res.booking_id}`);
-            // reset
             setSelectedServices({}); setSelectedStylistId(null); setAppointmentDate(''); setAppointmentTime(''); setVoucherCode(''); setAppliedVoucher(null);
         } catch (err: any) {
             setError(err?.response?.data?.error || 'Đặt lịch thất bại');
@@ -211,91 +206,110 @@ export default function NewBookingPage() {
     const totalPreview = Math.max(0, subtotal - discountPreview);
 
     return (
-        <div style={{ maxWidth: 920, margin: 'auto' }}>
-            <h2>Đặt lịch hẹn mới</h2>
-            {loading && <p>Đang tải...</p>}
-            {error && <p style={{ color: 'crimson' }}>{error}</p>}
-            {successMessage && <p style={{ color: 'green' }}>{successMessage}</p>}
+        <div className="new-booking-container">
+            <div className="new-booking-header">
+                <h2>Đặt Lịch Hẹn Mới</h2>
+                <p>Chọn dịch vụ và thời gian phù hợp với bạn</p>
+            </div>
 
-            <div className="card">
-                <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 12 }}>
-                    <div className="form-grid">
-                        <div>
-                            <label>Chọn Salon:</label>
-                            <select value={salonId ?? ''} onChange={e=>setSalonId(e.target.value?Number(e.target.value):null)}>
-                                <option value="">-- Chọn salon --</option>
-                                {salons.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                            </select>
+            {loading && <div className="status-message loading-message">Đang tải dữ liệu...</div>}
+            {error && <div className="status-message error-message">{error}</div>}
+            {successMessage && <div className="status-message success-message">{successMessage}</div>}
 
-                            <div style={{ marginTop: 12 }}>
+            <div className="booking-card">
+                <form onSubmit={handleSubmit}>
+                    <div className="booking-form-grid">
+                        <div className="services-section">
+                            <div className="form-section">
+                                <label>Chọn Salon</label>
+                                <select value={salonId ?? ''} onChange={e=>setSalonId(e.target.value?Number(e.target.value):null)}>
+                                    <option value="">-- Chọn salon --</option>
+                                    {salons.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                </select>
+                            </div>
+
+                            <div className="form-section">
+                                <label>Chọn Dịch Vụ</label>
                                 <ServiceSelector services={availableServices} selected={selectedServices} onChange={handleServiceChange} />
                             </div>
 
-                            <div style={{ marginTop: 12 }}>
-                                <label>Chọn stylist (tùy chọn):</label>
+                            <div className="form-section">
+                                <label>Chọn Stylist</label>
                                 <select value={selectedStylistId ?? ''} onChange={e=>setSelectedStylistId(e.target.value?Number(e.target.value):null)}>
                                     <option value="">Bất kỳ / Salon xếp</option>
                                     {availableStylists.map(s=> <option key={s.id} value={s.id}>{s.fullName}</option>)}
                                 </select>
                             </div>
 
-                            <div style={{ marginTop: 12 }}>
-                                <label>Voucher:</label>
-                                <div style={{ display: 'flex', gap: 8 }}>
-                                    <input value={voucherCode} onChange={e=>setVoucherCode(e.target.value)} placeholder="Mã voucher" />
-                                    <button type="button" className="btn small" onClick={applyVoucher}>Áp dụng</button>
-                                    {appliedVoucher && <small style={{ color: 'green' }}>Áp dụng: {appliedVoucher.code}</small>}
+                            <div className="form-section">
+                                <label>Mã Voucher</label>
+                                <div className="voucher-input-group">
+                                    <input value={voucherCode} onChange={e=>setVoucherCode(e.target.value)} placeholder="Nhập mã voucher" />
+                                    <button type="button" className="btn-secondary" onClick={applyVoucher}>Áp dụng</button>
                                 </div>
+                                {appliedVoucher && <div className="voucher-badge">{appliedVoucher.code}</div>}
                             </div>
 
-                            <div style={{ marginTop: 12 }}>
-                                <label>Ghi chú:</label>
-                                <textarea value={note} onChange={e=>setNote(e.target.value)} rows={3} style={{ width: '100%' }} />
+                            <div className="form-section">
+                                <label>Ghi Chú</label>
+                                <textarea value={note} onChange={e=>setNote(e.target.value)} rows={3} placeholder="Thêm ghi chú cho salon..." />
                             </div>
                         </div>
 
-                        <aside>
-                            <div style={{ marginBottom: 12 }}>
-                                <label>Ngày:</label>
+                        <div className="datetime-section">
+                            <div className="form-section" style={{ background: 'white', padding: '14px' }}>
+                                <label>Chọn Ngày</label>
                                 <input type="date" value={appointmentDate} onChange={e=>setAppointmentDate(e.target.value)} />
                             </div>
 
-                            <div>
-                                <label>Giờ (chọn nhanh):</label>
-                                <div className="slots">
-                                    {availableSlots.length === 0 && <small className="muted">Chọn salon và ngày để xem khung giờ trống</small>}
-                                    {availableSlots.map(s=> (
-                                        <button type="button" key={s} onClick={()=>setAppointmentTime(s)} className={`slot-button ${appointmentTime===s? 'selected':''}`}>{s}</button>
-                                    ))}
+                            <div className="form-section" style={{ background: 'white', padding: '14px' }}>
+                                <label>Chọn Giờ</label>
+                                <div className="slots-container">
+                                    {availableSlots.length === 0 ? (
+                                        <div className="slots-empty">Chọn salon và ngày để xem khung giờ trống</div>
+                                    ) : (
+                                        availableSlots.map(s => (
+                                            <button 
+                                                type="button" 
+                                                key={s} 
+                                                onClick={() => setAppointmentTime(s)} 
+                                                className={`slot-button ${appointmentTime === s ? 'selected' : ''}`}
+                                            >
+                                                {s}
+                                            </button>
+                                        ))
+                                    )}
+                                </div>
+                                <div style={{ marginTop: '12px' }}>
+                                    <label style={{ fontSize: '12px', marginBottom: '6px' }}>Hoặc nhập giờ thủ công</label>
+                                    <input type="time" value={appointmentTime} onChange={e=>setAppointmentTime(e.target.value)} />
                                 </div>
                             </div>
 
-                            <div style={{ marginTop: 12 }}>
-                                <label>Giờ thủ công:</label>
-                                <input type="time" value={appointmentTime} onChange={e=>setAppointmentTime(e.target.value)} />
-                            </div>
-
-                            <div style={{ marginTop: 18 }} className="card">
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div className="summary-card">
+                                <h3>Tổng Quan</h3>
+                                <div className="summary-row">
                                     <div>
-                                        <div className="small muted">Tạm tính</div>
-                                        <div style={{ fontWeight: 700 }}>{subtotal.toLocaleString()}đ</div>
-                                        <div className="small muted">{totalMin} phút</div>
+                                        <div className="summary-label">Tạm tính</div>
+                                        <div className="summary-duration">{totalMin} phút</div>
                                     </div>
-                                    <div style={{ textAlign: 'right' }}>
-                                        <div className="small muted">Giảm</div>
-                                        <div style={{ fontWeight: 700 }}>{discountPreview.toLocaleString()}đ</div>
-                                        <div className="small muted">Tổng</div>
-                                        <div style={{ fontWeight: 900, color: 'var(--accent)' }}>{totalPreview.toLocaleString()}đ</div>
-                                    </div>
+                                    <div className="summary-value">{subtotal.toLocaleString()}đ</div>
                                 </div>
+                                <div className="summary-row">
+                                    <div className="summary-label">Giảm giá</div>
+                                    <div className="summary-value">-{discountPreview.toLocaleString()}đ</div>
+                                </div>
+                                <div className="summary-row">
+                                    <div className="summary-label">Tổng cộng</div>
+                                    <div className="summary-total">{totalPreview.toLocaleString()}đ</div>
+                                </div>
+                                <button type="submit" className="btn-submit" disabled={loading}>
+                                    {loading ? '⏳ Đang xử lý...' : '✓ Xác nhận đặt lịch'}
+                                </button>
                             </div>
-                        </aside>
+                        </div>
                     </div>
 
-                    <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-                        <button type="submit" className="btn" disabled={loading}>{loading? 'Đang...' : 'Xác nhận đặt lịch'}</button>
-                    </div>
                 </form>
             </div>
         </div>

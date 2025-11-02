@@ -68,4 +68,178 @@ th, td { border-top: 1px solid #eee; padding: 8px 10px; }
 /* Link primary */
 .link-primary { color:var(--accent); font-weight:600; }
 
+/* frontend/src/App.css */
 
+/* --- Cải thiện tổng thể trang quản lý --- */
+.card {
+  background: #fff;
+  border: 1px solid #e2e8f0; /* Viền màu nhạt hơn */
+  border-radius: 10px;
+  padding: 20px; /* Tăng padding */
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); /* Bóng đổ nhẹ nhàng */
+  margin-bottom: 24px; /* Khoảng cách giữa các card */
+}
+
+.card h2 {
+  margin-top: 0; /* Bỏ margin top mặc định */
+  font-size: 1.5rem; /* Tăng cỡ chữ tiêu đề */
+  color: #1a202c; /* Màu chữ đậm hơn */
+  border-bottom: 1px solid #e2e8f0; /* Thêm đường kẻ dưới tiêu đề */
+  padding-bottom: 12px; /* Khoảng cách dưới đường kẻ */
+  margin-bottom: 16px; /* Khoảng cách dưới tiêu đề */
+}
+
+/* --- Khu vực tìm kiếm và nút "Tạo mới" --- */
+.search-create-area {
+  display: flex;
+  justify-content: space-between; /* Đẩy nút "Tạo mới" sang phải */
+  align-items: center;
+  margin-bottom: 16px;
+  gap: 16px; /* Khoảng cách giữa các phần tử */
+}
+
+.search-area {
+  display: flex;
+  align-items: center;
+  gap: 8px; /* Khoảng cách giữa ô tìm kiếm và text */
+}
+
+.search-area input {
+  padding: 10px 12px; /* Tăng padding ô input */
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  min-width: 280px; /* Độ rộng tối thiểu */
+}
+
+.search-area .muted.small {
+  color: #718096; /* Màu nhạt hơn cho text */
+}
+
+/* --- Cải thiện bảng --- */
+table {
+  width: 100%;
+  border-collapse: collapse; /* Bỏ khoảng trống giữa các border */
+  margin-top: 16px; /* Khoảng cách trên bảng */
+}
+
+th, td {
+  padding: 12px 15px; /* Tăng padding trong ô */
+  border-bottom: 1px solid #e2e8f0; /* Đường kẻ ngang mỏng hơn */
+  text-align: left; /* Căn lề trái mặc định */
+  vertical-align: middle; /* Căn giữa theo chiều dọc */
+}
+
+thead {
+  background-color: #f8fafc; /* Màu nền nhẹ cho header */
+}
+
+th {
+  font-weight: 600; /* Chữ đậm cho header */
+  color: #4a5568; /* Màu chữ header */
+  font-size: 0.875rem; /* Cỡ chữ nhỏ hơn chút */
+  text-transform: uppercase; /* Viết hoa chữ header */
+  letter-spacing: 0.05em; /* Tăng khoảng cách chữ */
+}
+
+/* Căn lề phải cho các cột số */
+th[align="right"], td[align="right"] {
+  text-align: right;
+}
+th[align="center"], td[align="center"] {
+  text-align: center;
+}
+
+/* Zebra striping - màu xen kẽ cho các hàng */
+tbody tr:nth-of-type(even) {
+  background-color: #f7fafc;
+}
+
+tbody tr:hover {
+  background-color: #edf2f7; /* Màu nền khi hover */
+}
+
+/* --- Style cho cột "Hiển thị" (Badge) --- */
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1; /* Đảm bảo chiều cao vừa vặn */
+}
+
+.badge.success { /* Dùng lại class success/danger đã có */
+   background-color: #e6fffa; /* Màu nền xanh lá nhạt */
+   color: #2c7a7b; /* Màu chữ xanh lá đậm */
+   border: 1px solid #b2f5ea;
+}
+.badge.danger {
+   background-color: #fff5f5; /* Màu nền đỏ nhạt */
+   color: #c53030; /* Màu chữ đỏ đậm */
+   border: 1px solid #fed7d7;
+}
+
+/* --- Style cho nút "Sửa", "Xóa" trong bảng --- */
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center; /* Căn giữa các nút */
+}
+
+.action-buttons .btn.small {
+  padding: 5px 10px; /* Điều chỉnh padding nút nhỏ */
+  font-size: 0.8rem;
+  border-radius: 6px;
+}
+
+/* Nút Sửa */
+.action-buttons .btn.edit { /* Thêm class .edit nếu cần style riêng */
+  background-color: #4299e1; /* Màu xanh dương */
+  border-color: #4299e1;
+  color: white;
+}
+.action-buttons .btn.edit:hover {
+  background-color: #2b6cb0;
+}
+
+/* Nút Xóa */
+.action-buttons .btn.delete { /* Thêm class .delete nếu cần style riêng */
+  background-color: transparent;
+  border: 1px solid #e53e3e; /* Viền đỏ */
+  color: #e53e3e; /* Chữ đỏ */
+}
+.action-buttons .btn.delete:hover {
+  background-color: #fff5f5; /* Nền đỏ nhạt khi hover */
+}
+
+/* --- Khu vực phân trang --- */
+.pagination-area {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-end; /* Đẩy sang phải */
+}
+
+.pagination-area .btn.small {
+   padding: 6px 12px;
+}
+
+.pagination-area .btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-area .small {
+  color: #718096;
+}
+
+/* --- Cột Tên và Category --- */
+.service-name-column .service-name {
+  font-weight: 600;
+  color: #2d3748;
+}
+.service-name-column .service-meta {
+  color: #718096;
+  font-size: 0.85rem;
+}

@@ -45,6 +45,6 @@ $router->get('/api/v1/debug/headers', 'App\\Controllers\\DebugController@headers
 $router->get('/api/v1/salons/{salon_id}/vouchers', 'App\\Controllers\\VoucherController@index');
 $router->get('/api/v1/salons/{salon_id}/reviews', 'App\\Controllers\\ReviewController@index');
 $router->post('/api/v1/bookings/{id}/reviews', 'App\\Controllers\\ReviewController@create');
-
+$router->post('/api/v1/upload/avatar', 'App\\Controllers\\UploadController@uploadAvatar');
 
 $router->run();

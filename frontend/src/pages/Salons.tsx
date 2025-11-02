@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../api/client';
 import { Link } from 'react-router-dom';
+import '../components/Salon.css';
 
 export default function SalonsPage(){
   const [items, setItems] = useState<any[]>([]);
@@ -26,18 +27,25 @@ export default function SalonsPage(){
   if(error) return <div style={{color:'crimson'}}>{error}</div>;
 
   return (
-    <div>
+  <div className="salons-page">
+  <div className="salons-container">
+    <div className="salons-header">
       <h2>Danh sách Salon</h2>
-      {items.length === 0 ? <p>Không có salon.</p> : (
-        <ul>
-          {items.map(s => (
-            <li key={s.id} style={{ marginBottom: 8 }}>
-              <Link to={`/salons/${s.id}`}>{s.name}</Link>
-              <div style={{ fontSize: 12, color: '#666' }}>{s.address_text ?? ''}</div>
-            </li>
-          ))}
-        </ul>
-      )}
+      <p>Khám phá các salon làm đẹp uy tín</p>
     </div>
+    
+    <ul className="salons-list">
+      {items.map(s => (
+        <li key={s.id} className="salon-card">
+          <Link to={`/salons/${s.id}`} className="salon-link">
+            <div className="salon-icon"></div>
+            <div className="salon-name">{s.name}</div>
+            <div className="salon-address">{s.address_text ?? ''}</div>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  </div>
+  </div>
   );
 }

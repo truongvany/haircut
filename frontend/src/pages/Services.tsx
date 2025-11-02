@@ -1,14 +1,17 @@
+// frontend/src/pages/Services.tsx
+
 import { useEffect, useMemo, useState } from "react";
 import { createService, deleteService, listServices, updateService } from "../api/services";
 import type { Service } from "../api/services";
 import { getUser } from "../store/auth";
 import ServiceForm from "../components/ServiceForm";
 import type { ServiceFormValues } from "../components/ServiceForm";
+import styles from "../components/Services.module.css";
 
 export default function ServicesPage() {
   const user = getUser();
-  const mySalonId = user?.role === "salon" ? user.id : 1; // admin có thể đổi, tạm mặc định 1
-  const [salonId, setSalonId] = useState<number>(mySalonId);    
+  const mySalonId = user?.role === "salon" ? user.id : 1;
+  const [salonId, setSalonId] = useState<number>(mySalonId);
   const [items, setItems] = useState<Service[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -23,13 +26,14 @@ export default function ServicesPage() {
 
   async function load() {
     setLoading(true);
+    setCreating(false);
+    setEditing(null);
     try {
       const data = await listServices(salonId, { page, limit, search });
       setItems(data.items);
       setTotal(data.total);
     } catch (e: any) {
       console.error("Lỗi tải dịch vụ:", e);
-      // Báo lỗi cho người dùng
       alert(e?.response?.data?.error || "Không thể tải danh sách dịch vụ");
     } finally {
       setLoading(false);
@@ -80,77 +84,125 @@ export default function ServicesPage() {
   }
 
   return (
-    <div className="card">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2>Service Management</h2>
-        <div>
-          <button className="btn" onClick={() => setCreating(true)}>Tạo mới</button>
+    <div className={styles.container}>
+      <div className={styles.card}>
+        <div className={styles.header}>
+          <h2 className={styles.title}>Service Management</h2>
+          <button 
+            className={styles.createBtn} 
+            onClick={() => { setCreating(true); setEditing(null); }}
+          >
+            ✨ Tạo dịch vụ mới
+          </button>
         </div>
-      </div>
 
-      {user?.role === "admin" && (
-        <div className="form-row" style={{ margin: '12px 0' }}>
-          <label className="small">Salon ID:</label>
-          <input type="number" value={salonId} onChange={e => setSalonId(Number(e.target.value))} style={{ width: 120 }} />
-        </div>
-      )}
+        {user?.role === "admin" && (
+          <div className={styles.salonIdRow}>
+            <label>Salon ID:</label>
+            <input 
+              type="number" 
+              value={salonId} 
+              onChange={e => { setPage(1); setSalonId(Number(e.target.value)); }} 
+            />
+          </div>
+        )}
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center' }}>
-        <input placeholder="Tìm theo tên..." value={search} onChange={e => { setPage(1); setSearch(e.target.value); }} style={{ minWidth: 260 }} />
-        <span className="muted small">{total} dịch vụ</span>
-      </div>
-
-      {creating && (
-        <div style={{ marginBottom: 12 }} className="card">
-          <ServiceForm submitting={submitting} onSubmit={onCreate} onCancel={() => setCreating(false)} />
-        </div>
-      )}
-
-      {editing && (
-        <div style={{ marginBottom: 12 }} className="card">
-          <ServiceForm
-            submitting={submitting}
-            initial={editing}
-            onSubmit={onUpdate}
-            onCancel={() => setEditing(null)}
+        <div className={styles.searchArea}>
+          <input 
+            className={styles.searchInput}
+            placeholder="🔍 Tìm kiếm dịch vụ..." 
+            value={search} 
+            onChange={e => { setPage(1); setSearch(e.target.value); }} 
           />
+          <span className={styles.totalCount}>📊 {total} dịch vụ</span>
         </div>
-      )}
 
-      <div className="card">
-        <table width="100%" cellPadding={8}>
+        {creating && (
+          <div className={styles.formCard}>
+            <ServiceForm 
+              submitting={submitting} 
+              onSubmit={onCreate} 
+              onCancel={() => setCreating(false)} 
+            />
+          </div>
+        )}
+
+        {editing && (
+          <div className={styles.formCard}>
+            <ServiceForm
+              submitting={submitting}
+              initial={editing}
+              onSubmit={onUpdate}
+              onCancel={() => setEditing(null)}
+            />
+          </div>
+        )}
+
+        <table className={styles.table}>
           <thead>
             <tr>
-              <th align="left">Tên</th>
-              <th align="right">Giá</th>
-              <th align="right">Phút</th>
-              <th align="center">Hiển thị</th>
-              <th align="left">Cập nhật</th>
-              <th align="center">Hành động</th>
+              <th>Tên dịch vụ</th>
+              <th>Giá tiền</th>
+              <th>Thời gian</th>
+              <th>Trạng thái</th>
+              <th>Cập nhật</th>
+              <th>Hành động</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={6}>Đang tải...</td></tr>
+              <tr>
+                <td colSpan={6} className={styles.loading}>
+                  ⏳ Đang tải dữ liệu...
+                </td>
+              </tr>
             ) : items.length === 0 ? (
-              <tr><td colSpan={6}>Chưa có dịch vụ</td></tr>
+              <tr>
+                <td colSpan={6} className={styles.empty}>
+                  🔭 Chưa có dịch vụ nào
+                </td>
+              </tr>
             ) : (
               items.map(s => (
                 <tr key={s.id}>
                   <td>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <div className="service-name">{s.name}</div>
-                      <div className="service-meta small muted">{s.category || ''}</div>
+                    <div>
+                      <div className={styles.serviceName}>{s.name}</div>
+                      <div className={styles.serviceMeta}>{s.category || 'Chưa phân loại'}</div>
                     </div>
                   </td>
-                  <td align="right">{s.price.toLocaleString()}</td>
-                  <td align="right">{s.durationMin}</td>
-                  <td align="center"><span className={s.isActive ? 'badge' : 'badge danger'}>{s.isActive ? 'Hiện' : 'Ẩn'}</span></td>
-                  <td>{s.updatedAt ? new Date(s.updatedAt).toLocaleString() : ''}</td>
-                  <td align="center">
-                    <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
-                      <button className="btn small" onClick={() => setEditing(s)}>Sửa</button>
-                      <button className="btn small ghost" onClick={() => onDelete(s)}>Xóa</button>
+                  <td>
+                    <div className={styles.priceCell}>{s.price.toLocaleString()} đ</div>
+                  </td>
+                  <td>
+                    <div className={styles.durationCell}>{s.durationMin} phút</div>
+                  </td>
+                  <td>
+                    <div className={styles.statusCell}>
+                      <span className={`${styles.badge} ${s.isActive ? styles.badgeSuccess : styles.badgeDanger}`}>
+                        {s.isActive ? '✓ Hiển thị' : '✕ Ẩn'}
+                      </span>
+                    </div>
+                  </td>
+                  <td>
+                    <div className={styles.dateCell}>
+                      {s.updatedAt ? new Date(s.updatedAt).toLocaleDateString('vi-VN') : '-'}
+                    </div>
+                  </td>
+                  <td>
+                    <div className={styles.actionButtons}>
+                      <button 
+                        className={`${styles.btn} ${styles.btnEdit}`}
+                        onClick={() => { setEditing(s); setCreating(false); }}
+                      >
+                        ✏️ Sửa
+                      </button>
+                      <button 
+                        className={`${styles.btn} ${styles.btnDelete}`}
+                        onClick={() => onDelete(s)}
+                      >
+                        🗑️ Xóa
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -158,12 +210,24 @@ export default function ServicesPage() {
             )}
           </tbody>
         </table>
-      </div>
 
-      <div style={{ marginTop: 12, display: 'flex', gap: 6, alignItems: 'center' }}>
-        <button className="btn small" disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>Trước</button>
-        <span className="small">Trang {page}/{pages}</span>
-        <button className="btn small" disabled={page >= pages} onClick={() => setPage(p => Math.min(pages, p + 1))}>Sau</button>
+        <div className={styles.pagination}>
+          <button 
+            className={styles.paginationBtn}
+            disabled={page <= 1} 
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+          >
+            ← Trang trước
+          </button>
+          <span className={styles.pageInfo}>Trang {page} / {pages}</span>
+          <button 
+            className={styles.paginationBtn}
+            disabled={page >= pages} 
+            onClick={() => setPage(p => Math.min(pages, p + 1))}
+          >
+            Trang sau →
+          </button>
+        </div>
       </div>
     </div>
   );

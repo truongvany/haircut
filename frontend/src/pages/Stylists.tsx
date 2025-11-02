@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { getUser } from "../store/auth";
-import { listStylists, createStylist, updateStylist, deleteStylist } from "../api/stylists"; // Import API stylists
-import type { Stylist, StylistFormValues } from "../api/stylists"; // Import types stylists
-import StylistForm from "../components/StylistForm"; // Import Form stylists
+import { listStylists, createStylist, updateStylist, deleteStylist } from "../api/stylists";
+import type { Stylist, StylistFormValues } from "../api/stylists";
+import StylistForm from "../components/StylistForm";
+import styles from "../components/Stylists.module.css";
 
 export default function StylistsPage() {
   const user = getUser();
-  // Lấy salonId tương tự ServicesPage
   const mySalonId = user?.role === "salon" ? user.id : 1;
   const [salonId, setSalonId] = useState<number>(mySalonId);
 
@@ -24,10 +24,10 @@ export default function StylistsPage() {
 
   async function load() {
     setLoading(true);
-    setCreating(false); // Đảm bảo form tạo ẩn đi khi tải lại
-    setEditing(null);   // Đảm bảo form sửa ẩn đi khi tải lại
+    setCreating(false);
+    setEditing(null);
     try {
-      const data = await listStylists(salonId, { page, limit, search }); // Gọi API listStylists
+      const data = await listStylists(salonId, { page, limit, search });
       setItems(data.items);
       setTotal(data.total);
     } catch (e: any) {
@@ -38,7 +38,6 @@ export default function StylistsPage() {
     }
   }
 
-  // Load dữ liệu khi salonId, page, limit, search thay đổi
   useEffect(() => {
     load();
   }, [salonId, page, limit, search]);
@@ -46,9 +45,9 @@ export default function StylistsPage() {
   async function onCreate(v: StylistFormValues) {
     setSubmitting(true);
     try {
-      await createStylist(salonId, v); // Gọi API createStylist
+      await createStylist(salonId, v);
       setCreating(false);
-      await load(); // Tải lại danh sách
+      await load();
       alert("Tạo stylist thành công");
     } catch (e: any) {
       alert(e?.response?.data?.error || "Tạo thất bại");
@@ -61,9 +60,9 @@ export default function StylistsPage() {
     if (!editing) return;
     setSubmitting(true);
     try {
-      await updateStylist(salonId, editing.id, v); // Gọi API updateStylist
+      await updateStylist(salonId, editing.id, v);
       setEditing(null);
-      await load(); // Tải lại danh sách
+      await load();
       alert("Cập nhật thành công");
     } catch (e: any) {
       alert(e?.response?.data?.error || "Cập nhật thất bại");
@@ -75,103 +74,159 @@ export default function StylistsPage() {
   async function onDelete(s: Stylist) {
     if (!confirm(`Xóa stylist "${s.fullName}"?`)) return;
     try {
-      await deleteStylist(salonId, s.id); // Gọi API deleteStylist
-      await load(); // Tải lại danh sách
+      await deleteStylist(salonId, s.id);
+      await load();
     } catch (e: any) {
       alert(e?.response?.data?.error || "Không thể xóa");
     }
   }
 
   return (
-    <div>
-      <h2>Stylist Management</h2>
+    <div className={styles.container}>
+      <div className={styles.card}>
+        <div className={styles.header}>
+          <h2 className={styles.title}>Stylist Management</h2>
+          <button className={styles.createBtn} onClick={() => { setCreating(true); setEditing(null); }}>
+            ✨ Tạo stylist mới
+          </button>
+        </div>
 
-      {/* Selector chọn Salon ID cho admin */}
-      {user?.role === "admin" && (
-        <div style={{ margin: "8px 0" }}>
-          <label>Salon ID: </label>
+        {/* Selector chọn Salon ID cho admin */}
+        {user?.role === "admin" && (
+          <div className={styles.salonIdRow}>
+            <label>Salon ID:</label>
+            <input
+              type="number"
+              value={salonId}
+              onChange={e => { setPage(1); setSalonId(Number(e.target.value)); }}
+            />
+          </div>
+        )}
+
+        {/* Thanh tìm kiếm */}
+        <div className={styles.searchArea}>
           <input
-            type="number"
-            value={salonId}
-            onChange={e => { setPage(1); setSalonId(Number(e.target.value)); }} // Reset page khi đổi salon
-            style={{ width: 120 }}
+            className={styles.searchInput}
+            placeholder="🔍 Tìm theo tên..."
+            value={search}
+            onChange={e => {
+              setPage(1);
+              setSearch(e.target.value);
+            }}
           />
         </div>
-      )}
 
-      {/* Thanh tìm kiếm và nút tạo mới */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-        <input
-          placeholder="Tìm theo tên..."
-          value={search}
-          onChange={e => {
-            setPage(1); // Reset page khi tìm kiếm
-            setSearch(e.target.value);
-          }}
-          style={{ minWidth: 260 }}
-        />
-        <button onClick={() => { setCreating(true); setEditing(null); }}>Tạo mới</button> {/* Đảm bảo chỉ 1 form hiện */}
-      </div>
+        {/* Form tạo mới */}
+        {creating && (
+          <div className={styles.formCard}>
+            <StylistForm submitting={submitting} onSubmit={onCreate} onCancel={() => setCreating(false)} />
+          </div>
+        )}
 
-      {/* Form tạo mới */}
-      {creating && (
-        <div style={{ marginBottom: 12 }}>
-          <StylistForm submitting={submitting} onSubmit={onCreate} onCancel={() => setCreating(false)} />
+        {/* Form sửa */}
+        {editing && (
+          <div className={styles.formCard}>
+            <StylistForm
+              submitting={submitting}
+              initial={editing}
+              onSubmit={onUpdate}
+              onCancel={() => setEditing(null)}
+            />
+          </div>
+        )}
+
+        {/* Bảng danh sách */}
+        <div style={{ border: "1px solid rgba(97, 218, 251, 0.2)", borderRadius: 12, overflow: "hidden" }}>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th style={{ width: '25%' }}>Tên Stylist</th>
+                <th style={{ width: '30%' }}>Chuyên môn</th>
+                <th style={{ width: '15%', textAlign: 'center' }}>Hoạt động</th>
+                <th style={{ width: '15%' }}>Cập nhật</th>
+                <th style={{ width: '15%', textAlign: 'center' }}>Hành động</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan={5} className={styles.loading}>Đang tải...</td></tr>
+              ) : items.length === 0 ? (
+                <tr><td colSpan={5} className={styles.empty}>Chưa có stylist</td></tr>
+              ) : (
+                items.map(s => (
+                  <tr key={s.id}>
+                    <td>
+                      <div className={styles.stylistName}>{s.fullName}</div>
+                      {s.bio && (
+                        <div className={styles.stylistBio}>{s.bio}</div>
+                      )}
+                    </td>
+                    <td>
+                      {(s.specialties && s.specialties.length > 0) ? (
+                        <div className={styles.specialties}>
+                          {s.specialties.map((spec, idx) => (
+                            <span key={idx} className={styles.specialtyTag}>{spec}</span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className={styles.emptyText}>Chưa có</span>
+                      )}
+                    </td>
+                    <td style={{ textAlign: 'center' }}>
+                      <span className={`${styles.badge} ${s.active ? styles.badgeSuccess : styles.badgeDanger}`}>
+                        {s.active ? '✓ Hiển thị' : '✕ Ẩn'}
+                      </span>
+                    </td>
+                    <td>
+                      {s.updatedAt ? new Date(s.updatedAt).toLocaleString('vi-VN', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      }) : "-"}
+                    </td>
+                    <td>
+                      <div className={styles.actionButtons}>
+                        <button 
+                          className={`${styles.btn} ${styles.btnEdit}`}
+                          onClick={() => { setEditing(s); setCreating(false); }}
+                        >
+                          ✏️ Sửa
+                        </button>
+                        <button 
+                          className={`${styles.btn} ${styles.btnDelete}`}
+                          onClick={() => onDelete(s)}
+                        >
+                          🗑️ Xóa
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
-      )}
 
-      {/* Form sửa */}
-      {editing && (
-        <div style={{ marginBottom: 12 }}>
-          <StylistForm
-            submitting={submitting}
-            initial={editing}
-            onSubmit={onUpdate}
-            onCancel={() => setEditing(null)}
-          />
+        {/* Phân trang */}
+        <div className={styles.pagination}>
+          <button 
+            className={styles.paginationBtn}
+            disabled={page <= 1} 
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+          >
+            Trước
+          </button>
+          <span className={styles.pageInfo}>Trang {page}/{pages}</span>
+          <button 
+            className={styles.paginationBtn}
+            disabled={page >= pages} 
+            onClick={() => setPage(p => Math.min(pages, p + 1))}
+          >
+            Sau
+          </button>
         </div>
-      )}
-
-      {/* Bảng danh sách */}
-      <div style={{ border: "1px solid #eee", borderRadius: 8, overflow: "hidden" }}>
-        <table width="100%" cellPadding={8}>
-          <thead style={{ background: "#fafafa" }}>
-            <tr>
-              <th align="left">Tên Stylist</th>
-              <th align="left">Chuyên môn</th>
-              <th align="center">Hoạt động</th>
-              <th align="left">Cập nhật</th>
-              <th align="center">Hành động</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan={5}>Đang tải...</td></tr>
-            ) : items.length === 0 ? (
-              <tr><td colSpan={5}>Chưa có stylist</td></tr>
-            ) : (
-              items.map(s => (
-                <tr key={s.id}>
-                  <td>{s.fullName}</td>
-                  <td>{(s.specialties || []).join(', ')}</td> {/* Hiển thị specialties */}
-                  <td align="center">{s.active ? "✓" : "✗"}</td>
-                  <td>{s.updatedAt ? new Date(s.updatedAt).toLocaleString() : ""}</td>
-                  <td align="center" style={{ display: "flex", gap: 6, justifyContent: "center" }}>
-                    <button onClick={() => { setEditing(s); setCreating(false); }}>Sửa</button> {/* Đảm bảo chỉ 1 form hiện */}
-                    <button onClick={() => onDelete(s)}>Xóa</button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Phân trang */}
-      <div style={{ marginTop: 8, display: "flex", gap: 6 }}>
-        <button disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>Trước</button>
-        <span>Trang {page}/{pages}</span>
-        <button disabled={page >= pages} onClick={() => setPage(p => Math.min(pages, p + 1))}>Sau</button>
       </div>
     </div>
   );

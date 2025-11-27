@@ -1,0 +1,239 @@
+/* ReviewForm.module.css - Beautiful Review Form Styling */
+
+.review-form-wrapper {
+  animation: slideInUp 0.3s ease-out;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.review-form {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border: 2px solid #e91e63;
+  border-radius: 12px;
+  padding: 24px;
+  margin-top: 16px;
+  box-shadow: 0 4px 15px rgba(233, 30, 99, 0.1);
+  transition: all 0.3s ease;
+}
+
+.review-form:hover {
+  box-shadow: 0 6px 20px rgba(233, 30, 99, 0.2);
+}
+
+/* Header */
+.review-form-header {
+  margin-bottom: 20px;
+  text-align: center;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.review-form-header h4 {
+  margin: 0;
+  font-size: 18px;
+  color: #333;
+  font-weight: 700;
+}
+
+.review-form-subtitle {
+  margin: 8px 0 0 0;
+  font-size: 13px;
+  color: #666;
+}
+
+/* Form Group */
+.review-form-group {
+  margin-bottom: 20px;
+}
+
+.review-form-label {
+  display: block;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 10px;
+  font-size: 14px;
+  letter-spacing: 0.3px;
+}
+
+/* Star Rating */
+.star-rating {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.star-button {
+  background: none;
+  border: none;
+  font-size: 32px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  opacity: 0.4;
+  transform: scale(1);
+  padding: 0;
+}
+
+.star-button:hover {
+  transform: scale(1.2) rotate(15deg);
+  opacity: 0.8;
+}
+
+.star-button.active {
+  opacity: 1;
+  transform: scale(1.3);
+  filter: drop-shadow(0 0 8px rgba(233, 30, 99, 0.6));
+}
+
+.star-label {
+  font-size: 13px;
+  color: #e91e63;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+/* Textarea */
+.review-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.review-textarea:focus {
+  outline: none;
+  border-color: #e91e63;
+  box-shadow: 0 0 0 3px rgba(233, 30, 99, 0.1);
+}
+
+.review-textarea:disabled {
+  background: #f5f5f5;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Comment Counter */
+.comment-counter {
+  font-size: 12px;
+  color: #999;
+  text-align: right;
+  margin-top: 4px;
+}
+
+/* Error Message */
+.review-error {
+  background: #ffebee;
+  border-left: 4px solid #f44336;
+  color: #c62828;
+  padding: 12px 14px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  font-weight: 500;
+  animation: shake 0.3s ease;
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+}
+
+/* Action Buttons */
+.review-form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.btn-submit,
+.btn-cancel {
+  flex: 1;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: none;
+}
+
+.btn-submit {
+  background: linear-gradient(135deg, #e91e63 0%, #c2185b 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(233, 30, 99, 0.3);
+}
+
+.btn-submit:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(233, 30, 99, 0.4);
+}
+
+.btn-submit:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-cancel {
+  background: #f0f0f0;
+  color: #666;
+  border: 1px solid #ddd;
+}
+
+.btn-cancel:hover:not(:disabled) {
+  background: #e0e0e0;
+  transform: translateY(-1px);
+}
+
+.btn-cancel:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .review-form {
+    padding: 16px;
+  }
+
+  .star-rating {
+    gap: 8px;
+  }
+
+  .star-button {
+    font-size: 28px;
+  }
+
+  .review-form-actions {
+    flex-direction: column;
+  }
+
+  .btn-submit,
+  .btn-cancel {
+    width: 100%;
+  }
+}

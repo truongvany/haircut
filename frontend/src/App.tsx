@@ -1,22 +1,25 @@
 import styles from './components/AppHeader.module.css';
 import { Suspense, lazy, useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
-import Login from "./pages/login";
-import RegisterPage from "./pages/register";
-import ServicesPage from "./pages/Services";
-import SalonsPage from "./pages/Salons";
+import Login from "./pages/Account/login";
+import RegisterPage from "./pages/Account/Register";
+import ServicesPage from "./pages/Services/Services";
+import SalonsPage from "./pages/Salon/Salons";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Forbidden from "./pages/Forbidden";
-import StylistsPage from "./pages/Stylists";
-import BookingsPage from "./pages/Bookings";
-import BookingHistoryPage from "./pages/BookingHistory";
-import AppFooter from './pages/AppFooter';
+import StylistsPage from "./pages/Stylists/Stylists";
+import BookingsPage from "./pages/Booking/Bookings";
+import BookingHistoryPage from "./pages/History/History";
+import AppFooter from './pages/Footer/AppFooter';
 
 // Lazy load các trang
-const SalonDetailPage = lazy(() => import('./pages/SalonDetail'));
-const NewBookingPage = lazy(() => import('./pages/NewBooking'));
-const AccountPage = lazy(() => import('./pages/Account'));
-const NewsPage = lazy(() => import('./pages/NewsPage'));
+const SalonDetailPage = lazy(() => import('./pages/Salon/SalonDetail'));
+const EditSalonPage = lazy(() => import('./pages/Salon/EditSalon'));
+const NewBookingPage = lazy(() => import('./pages/Booking/NewBooking'));
+const AccountPage = lazy(() => import('./pages/Account/Account'));
+const NewsPage = lazy(() => import('./pages/New/NewsPage'));
+const PaymentPage = lazy(() => import('./pages/Payment/PaymentPage'));
+const PaymentDebugPage = lazy(() => import('./pages/Payment/PaymentDebug'));
 
 import { isLoggedIn, clearAuth } from "./store/auth";
 import { getMe } from "./api/user";
@@ -56,12 +59,14 @@ export default function App() {
           <Link to="/" className={styles.logo}>Haircut</Link>
           <nav>
             <Link className={styles.navLink} to="/">Trang Chủ</Link>
-            <Link className={styles.navLink} to="/services">Services</Link>
             <Link className={styles.navLink} to="/salons">Salons</Link>
+            <Link className={styles.navLink} to="/services">Services</Link>
             <Link className={styles.navLink} to="/stylists">Stylists</Link>
             <Link className={styles.navLink} to="/bookings">Bookings</Link>
             <Link className={styles.navLink} to="/new-booking">Đặt lịch mới</Link>
-            <Link className={styles.navLink} to="/my-bookings">Lịch sử</Link>
+            <Link className={styles.navLink} to="/payments">Thanh toán</Link>
+            <Link className={styles.navLink} to="/History">Lịch sử</Link>
+            <Link className={styles.navLink} to="/support">Hỗ trợ</Link>
             <Link className={styles.navLink} to="/account">Tài khoản</Link>
           </nav>
 
@@ -90,8 +95,6 @@ export default function App() {
          )}
         </div>
         </header>
-
-        {/* THÊM DIV NÀY ĐỂ TẠO KHOẢNG CÁCH CHO HEADER CỐ ĐỊNH */}
         <main className={styles.pageContent}>
           <Routes>
             <Route
@@ -156,7 +159,7 @@ export default function App() {
               }
             />
             <Route
-              path="/my-bookings"
+              path="/History"
               element={
                 <ProtectedRoute allow={['customer','admin','salon']}>
                   <BookingHistoryPage />
@@ -173,6 +176,17 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/payments"
+              element={
+                <ProtectedRoute allow={['customer','admin','salon']}>
+                  <Suspense fallback={<div>Đang tải trang thanh toán...</div>}>
+                    <PaymentPage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/payment-debug" element={<Suspense fallback={<div>Loading...</div>}><PaymentDebugPage /></Suspense>} />
             <Route path="/403" element={<Forbidden />} />
             <Route
               path="/salons/:id"
@@ -180,6 +194,16 @@ export default function App() {
                 <ProtectedRoute>
                   <Suspense fallback={<div>Đang tải salon...</div>}>
                     <SalonDetailPage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/salons/:id/edit"
+              element={
+                <ProtectedRoute allow={['salon', 'admin']}>
+                  <Suspense fallback={<div>Đang tải...</div>}>
+                    <EditSalonPage />
                   </Suspense>
                 </ProtectedRoute>
               }

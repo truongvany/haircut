@@ -15,12 +15,19 @@ class AuthController extends Controller
         $name  = trim($body['full_name'] ?? '');
         $email = trim($body['email'] ?? '');
         $pass  = $body['password'] ?? '';
+        $roleId = (int)($body['role_id'] ?? 3); // Mặc định: customer
 
         if ($name === '' || $email === '' || $pass === '') {
             return $this->json(['error' => 'Thiếu thông tin'], 400);
         }
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return $this->json(['error' => 'Email không hợp lệ'], 400);
+        }
+
+        // Validate role_id: chỉ cho phép 2 (salon) hoặc 3 (customer)
+        // Admin (role_id=1) chỉ tạo bằng script riêng
+        if (!in_array($roleId, [2, 3])) {
+            return $this->json(['error' => 'Loại tài khoản không hợp lệ'], 400);
         }
 
         $pdo = DB::pdo();
@@ -32,10 +39,10 @@ class AuthController extends Controller
             return $this->json(['error' => 'Email đã tồn tại'], 409);
         }
 
-        // role_id mặc định: 3 (customer)
+        // Tạo user với role_id từ request
         $hash = password_hash($pass, PASSWORD_BCRYPT);
-        $ins  = $pdo->prepare('INSERT INTO users(role_id, full_name, email, password_hash) VALUES (3, ?, ?, ?)');
-        $ins->execute([$name, $email, $hash]);
+        $ins  = $pdo->prepare('INSERT INTO users(role_id, full_name, email, password_hash) VALUES (?, ?, ?, ?)');
+        $ins->execute([$roleId, $name, $email, $hash]);
 
         return $this->json([
             'message' => 'Đăng ký thành công',
@@ -68,6 +75,17 @@ class AuthController extends Controller
             ? 'admin'
             : (((int)$u['role_id'] === 2) ? 'salon' : 'customer');
 
+        // Nếu là salon owner, lấy salon_id
+        $salonId = null;
+        if ($role === 'salon') {
+            $stSalon = $pdo->prepare('SELECT id FROM salons WHERE owner_user_id = ? LIMIT 1');
+            $stSalon->execute([(int)$u['id']]);
+            $salon = $stSalon->fetch();
+            if ($salon) {
+                $salonId = (int)$salon['id'];
+            }
+        }
+
         $token = AuthCore::issue([
             'uid'   => (int)$u['id'],
             'role'  => $role,
@@ -75,14 +93,21 @@ class AuthController extends Controller
             'name'  => $u['full_name'],
         ]);
 
+        $userData = [
+            'id'    => (int)$u['id'],
+            'name'  => $u['full_name'],
+            'role'  => $role,
+            'email' => $u['email'],
+        ];
+
+        // Thêm salonId nếu có
+        if ($salonId !== null) {
+            $userData['salonId'] = $salonId;
+        }
+
         return $this->json([
             'token' => $token,
-            'user'  => [
-                'id'    => (int)$u['id'],
-                'name'  => $u['full_name'],
-                'role'  => $role,
-                'email' => $u['email'],
-            ]
+            'user'  => $userData
         ]);
     }
 

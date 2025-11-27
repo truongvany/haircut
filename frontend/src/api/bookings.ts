@@ -22,18 +22,18 @@ export async function listBookingsBySalonDate(salonId: number, date: string) {
   const { data } = await api.get(`/v1/bookings`, {
     params: { salon_id: salonId, date: date } // Use snake_case for query params as defined in backend
   });
-  // Backend returns items with snake_case keys (customer_id, stylist_id, appointment_at, total_minutes, total_amt)
+  // Backend returns items with camelCase keys (customerId, stylistId, appointmentAt, totalMinutes, totalAmt)
   // Map them to the frontend Booking shape (camelCase)
   const items = (data.items || []).map((r: any) => ({
     id: Number(r.id),
-    customerId: r.customer_id !== undefined ? Number(r.customer_id) : undefined,
-    stylistId: r.stylist_id !== undefined && r.stylist_id !== null ? Number(r.stylist_id) : undefined,
-    appointmentAt: r.appointment_at ?? '',
-    totalMinutes: r.total_minutes !== undefined ? Number(r.total_minutes) : undefined,
+    customerId: r.customerId !== undefined ? Number(r.customerId) : undefined,
+    stylistId: r.stylistId !== undefined && r.stylistId !== null ? Number(r.stylistId) : undefined,
+    appointmentAt: r.appointmentAt ?? '',
+    totalMinutes: r.totalMinutes !== undefined ? Number(r.totalMinutes) : undefined,
     status: r.status,
-    totalAmt: r.total_amt !== undefined ? Number(r.total_amt) : undefined,
-    customerName: r.customer_name ?? null,
-    stylistName: r.stylist_name ?? null,
+    totalAmt: r.totalAmt !== undefined ? Number(r.totalAmt) : undefined,
+    customerName: r.customerName ?? null,
+    stylistName: r.stylistName ?? null,
   } as Booking));
   return { items } as { items: Booking[] };
 }
@@ -44,15 +44,15 @@ export async function listMyBookings() {
   const items = (data.items || []).map((r: any) => ({
     id: Number(r.id),
     salonId: r.salonId !== undefined ? Number(r.salonId) : undefined,
-    
+    salonName: r.salonName ?? null,
     customerId: r.customerId !== undefined ? Number(r.customerId) : undefined,
-    stylistId: r.stylistId !== undefined && r.stylistId !== null ? Number(r.stylistId) : undefined,
-    appointmentAt: r.appointmentAt ?? '',
-    totalMinutes: r.totalMinutes !== undefined ? Number(r.totalMinutes) : undefined,
+    stylistId: r.stylistId !== undefined && r.stylistId !== null ? Number(r.stylistId) : undefined, 
+    appointmentAt: r.appointmentAt ?? '', 
+    totalMinutes: r.totalMinutes !== undefined ? Number(r.totalMinutes) : undefined, 
     status: r.status,
-    totalAmt: r.totalAmt !== undefined ? Number(r.totalAmt) : undefined,
-  customerName: r.customerName ?? null,
-  stylistName: r.stylistName ?? null,
+    totalAmt: r.totalAmt !== undefined ? Number(r.totalAmt) : undefined, 
+    customerName: r.customerName ?? null, 
+    stylistName: r.stylistName ?? null, 
   } as Booking));
   return { items } as { items: Booking[] };
 }

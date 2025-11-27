@@ -1,5 +1,11 @@
 export type Role = "admin" | "salon" | "customer";
-export type User = { id: number; role: Role; email?: string; name?: string };
+export type User = {
+  id: number;
+  role: Role;
+  email?: string;
+  name?: string;
+  salonId?: number; // ID của salon nếu user là salon owner
+};
 
 const TOKEN_KEY = "hc_token";
 const USER_KEY = "hc_user";

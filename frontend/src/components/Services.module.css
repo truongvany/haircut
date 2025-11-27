@@ -151,7 +151,9 @@
   letter-spacing: 0.5px;
 }
 
-.salonIdRow input {
+.salonIdRow input,
+.salonIdRow select,
+.salonSelect {
   background: rgba(10, 14, 26, 0.8);
   border: 2px solid rgba(97, 218, 251, 0.3);
   color: #fff;
@@ -160,14 +162,22 @@
   font-size: 1em;
   font-weight: 600;
   transition: all 0.3s ease;
-  width: 140px;
+  min-width: 200px;
 }
 
-.salonIdRow input:focus {
+.salonIdRow input:focus,
+.salonIdRow select:focus,
+.salonSelect:focus {
   outline: none;
   border-color: #61dafb;
   box-shadow: 0 0 0 4px rgba(97, 218, 251, 0.15);
   background: rgba(10, 14, 26, 1);
+}
+
+.salonSelect option {
+  background: #0a0e1a;
+  color: #fff;
+  padding: 10px;
 }
 
 /* 7) Search Area */

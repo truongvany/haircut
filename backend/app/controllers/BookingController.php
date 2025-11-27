@@ -7,6 +7,29 @@ use App\Core\Auth; // Đảm bảo đã import Auth
 
 class BookingController extends Controller {
 
+  // GET /api/v1/bookings/salon-id - Lấy salon_id cho owner
+  public function getSalonId() {
+    $me = Auth::user();
+    if (!$me || !isset($me['uid'])) {
+      return $this->json(['error' => 'Unauthorized'], 401);
+    }
+
+    if ($me['role'] !== 'salon') {
+      return $this->json(['error' => 'Only salon owners can access this endpoint'], 403);
+    }
+
+    $pdo = DB::pdo();
+    $st = $pdo->prepare("SELECT id FROM salons WHERE owner_user_id = ? LIMIT 1");
+    $st->execute([$me['uid']]);
+    $salon = $st->fetch(\PDO::FETCH_ASSOC);
+
+    if (!$salon) {
+      return $this->json(['error' => 'No salon found for this user'], 404);
+    }
+
+    return $this->json(['salon_id' => (int)$salon['id']]);
+  }
+
   // POST /api/v1/bookings
   // body: { "salon_id":1, "stylist_id":1, "appointment_at":"2025-10-25 10:00:00",
   //         "items":[ {"service_id":1,"qty":1}, {"service_id":2,"qty":1} ], "note": "..." }
@@ -229,16 +252,16 @@ class BookingController extends Controller {
     }
   }
 
-  // GET /api/v1/bookings?salon_id=1&date=YYYY-MM-DD
-  public function bySalonDate(){
-    $sid = (int)($_GET['salon_id'] ?? 0);
-    $date = $_GET['date'] ?? date('Y-m-d');
-    if ($sid <= 0 || !preg_match('/^\d{4}-\d{2}-\d{2}$/',$date)) {
+    // GET /api/v1/bookings?salon_id=1&date=YYYY-MM-DD
+    public function bySalonDate(){
+        $sid = (int)($_GET['salon_id'] ?? 0);
+        $date = $_GET['date'] ?? date('Y-m-d');
+        if ($sid <= 0 || !preg_match('/^\d{4}-\d{2}-\d{2}$/',$date)) {
         return $this->json(['error'=>'Thiếu salon_id hoặc date'],400);
-    }
+        }
 
-    $pdo = DB::pdo();
-    $sql = "SELECT
+        $pdo = DB::pdo();
+        $sql = "SELECT
                 b.id,
                 b.customer_id AS customerId,
                 u.full_name AS customerName,
@@ -249,25 +272,32 @@ class BookingController extends Controller {
                 b.status,
                 b.total_amt AS totalAmt
             FROM bookings b
-            JOIN users u ON b.customer_id = u.id
+            LEFT JOIN users u ON b.customer_id = u.id
             LEFT JOIN stylists st ON b.stylist_id = st.id
             WHERE b.salon_id = ? AND DATE(b.appointment_at) = ?
             ORDER BY b.appointment_at";
 
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute([$sid, $date]);
-    $items = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+         $stmt = $pdo->prepare($sql);
+         $stmt->execute([$sid, $date]);
+        $items = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
-    // Chuyển đổi kiểu dữ liệu nếu cần
-    $items = array_map(function($item){
-        $item['totalMinutes'] = (int)$item['totalMinutes'];
-        $item['totalAmt'] = (int)$item['totalAmt'];
-        $item['stylistName'] = $item['stylistName'] ?? null;
-        return $item;
-    }, $items);
+        // Normalize data types and ensure names are present
+        $items = array_map(function($item){
+        return [
+            'id' => (int)$item['id'],
+            'customerId' => (int)$item['customerId'],
+            'customerName' => $item['customerName'] ?? 'Khách',
+            'stylistId' => $item['stylistId'] ? (int)$item['stylistId'] : null,
+            'stylistName' => $item['stylistName'] ?? null,
+            'appointmentAt' => $item['appointmentAt'] ?? '',
+            'totalMinutes' => (int)($item['totalMinutes'] ?? 0),
+            'status' => $item['status'] ?? 'pending',
+            'totalAmt' => (int)($item['totalAmt'] ?? 0)
+        ];
+        }, $items);
 
-    return $this->json(['items'=>$items]);
-  }
+        return $this->json(['items'=>$items]);
+    }
 
     // GET /api/v1/salons/{salon_id}/availability?date=YYYY-MM-DD&duration_min=30&step=15&stylist_id=123
     public function availability($params){
@@ -418,57 +448,57 @@ class BookingController extends Controller {
     }
 
     // GET /api/v1/bookings/mine
+    // GET /api/v1/bookings/mine
     public function mine() {
-        $me = Auth::user();
-        if (!$me || !isset($me['uid'])) return $this->json(['error'=>'Unauthorized'], 401);
+         $me = Auth::user();
+            if (!$me || !isset($me['uid'])) return $this->json(['error'=>'Unauthorized'], 401);
         $customerId = (int)$me['uid'];
 
         $pdo = DB::pdo();
         $sql = "SELECT
-                                b.id,
-                                b.salon_id,
-                                s.name AS salon_name,
-                                b.customer_id,
-                                u.full_name AS customer_name,
-                                b.stylist_id,
-                                st.full_name AS stylist_name,
-                                b.appointment_at,
-                                b.total_minutes,
-                                b.status,
-                                b.total_amt
-                        FROM bookings b
-                        LEFT JOIN users u ON b.customer_id = u.id
-                        LEFT JOIN stylists st ON b.stylist_id = st.id
-                        LEFT JOIN salons s ON b.salon_id = s.id
-                        WHERE b.customer_id = ?
-                        ORDER BY b.appointment_at DESC";
+                    b.id,
+                    b.salon_id,
+                    s.name AS salon_name,
+                    b.customer_id,
+                    u.full_name AS customer_name,
+                    b.stylist_id,
+                    st.full_name AS stylist_name,
+                    b.appointment_at,
+                    b.total_minutes,
+                    b.status,
+                    b.total_amt
+            FROM bookings b
+            LEFT JOIN users u ON b.customer_id = u.id
+            LEFT JOIN stylists st ON b.stylist_id = st.id
+            LEFT JOIN salons s ON b.salon_id = s.id
+            WHERE b.customer_id = ?
+            ORDER BY b.appointment_at DESC";
 
         $stmt = $pdo->prepare($sql);
-        $stmt->execute([$customerId]);
-        $items = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+         $stmt->execute([$customerId]);
+         $items = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
-        // Normalize keys to camelCase for compatibility with frontend
+       // Normalize to camelCase for frontend compatibility
         $items = array_map(function($it){
-                return [
-                        'id' => (int)$it['id'],
-                        'salonId' => (int)$it['salon_id'],
-                        'salonName' => $it['salon_name'] ?? null,
-                        'customerId' => (int)$it['customer_id'],
-                        'customerName' => $it['customer_name'] ?? null,
-                        'stylistId' => $it['stylist_id'] ? (int)$it['stylist_id'] : null,
-                        'stylistName' => $it['stylist_name'] ?? null,
-                        'appointmentAt' => $it['appointment_at'] ?? '',
-                        'totalMinutes' => (int)$it['total_minutes'],
-                        'status' => $it['status'] ?? null,
-                        'totalAmt' => (int)$it['total_amt']
-                ];
+          return [
+            'id' => (int)$it['id'],
+            'salonId' => (int)$it['salon_id'],
+            'salonName' => $it['salon_name'] ?? 'Salon',
+            'customerId' => (int)$it['customer_id'],
+            'customerName' => $it['customer_name'] ?? 'Khách',
+            'stylistId' => $it['stylist_id'] ? (int)$it['stylist_id'] : null,
+            'stylistName' => $it['stylist_name'] ?? null,
+            'appointmentAt' => $it['appointment_at'] ?? '',
+            'totalMinutes' => (int)($it['total_minutes'] ?? 0),
+            'status' => $it['status'] ?? 'pending',
+            'totalAmt' => (int)($it['total_amt'] ?? 0)
+          ];
         }, $items);
 
-        return $this->json(['items'=>$items]);
+    return $this->json(['items'=>$items]);
     }
-
-  // PUT /api/v1/bookings/{id}/confirm
-  public function confirm($p){
+    // PUT /api/v1/bookings/{id}/confirm
+    public function confirm($p){
      $id = (int)($p['id'] ?? 0);
      if ($id <= 0) return $this->json(['error'=>'Invalid Booking ID'], 400);
      // TODO: Add permission check (only admin or salon owner of this booking)

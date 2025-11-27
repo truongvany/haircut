@@ -451,6 +451,15 @@
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 4px 16px rgba(239, 36, 145, 0.3);
+  
+  /* Căn giữa nội dung bên trong */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  
+  /* Căn giữa button trong container */
+  margin: 0 auto;
 }
 
 .btn-submit:hover:not(:disabled) {

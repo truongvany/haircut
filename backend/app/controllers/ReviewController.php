@@ -31,6 +31,34 @@ class ReviewController extends Controller {
     return $this->json(['items'=>$items]);
   }
 
+  // GET /api/v1/bookings/{id}/review-check - Check if booking already has a review
+  public function checkReview($params) {
+    $me = \App\Core\Auth::user();
+    if (!$me || !isset($me['uid'])) return $this->json(['error'=>'Unauthorized'], 401);
+
+    $bookingId = (int)($params['id'] ?? 0);
+    if ($bookingId <= 0) return $this->json(['error'=>'Invalid booking id'], 400);
+
+    $pdo = DB::pdo();
+    $stmt = $pdo->prepare('SELECT id, rating, comment, created_at FROM reviews WHERE booking_id = ? LIMIT 1');
+    $stmt->execute([$bookingId]);
+    $review = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+    if ($review) {
+      return $this->json([
+        'has_review' => true,
+        'review' => [
+          'id' => (int)$review['id'],
+          'rating' => (int)$review['rating'],
+          'comment' => $review['comment'],
+          'created_at' => $review['created_at']
+        ]
+      ]);
+    }
+
+    return $this->json(['has_review' => false]);
+  }
+
   // POST /api/v1/bookings/{id}/reviews
   public function create($params){
     $me = \App\Core\Auth::user();

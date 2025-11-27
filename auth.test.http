@@ -1,9 +1,0 @@
-# Dán nguyên token FULL vào giữa dấu nháy đơn
-$token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1aWQiOjEsInJvbGUiOiJzYWxvbiIsImVtYWlsIjoib3duZXJAaGFpcmN1dC50ZXN0IiwibmFtZSI6IlNhbG9uIE93bmVyIiwiaWF0IjoxNzYwOTUxNTUwLCJleHAiOjE3NjEwM...'
-
-# Tạo service cho salon id=1
-Invoke-RestMethod -Method Post `
-  -Uri "http://localhost/haircut/backend/public/api/v1/salons/1/services" `
-  -ContentType "application/json" `
-  -Headers @{ Authorization = "Bearer $token" } `
-  -Body '{"name":"Goi dau VIP","category":"goi","duration_min":25,"base_price":90000}'

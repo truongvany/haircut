@@ -5,6 +5,11 @@ use App\Core\Controller;
 class UploadController extends Controller {
   public function uploadAvatar() {
     $user = $this->requireAuth();
+    $userId = $user['uid'] ?? $user['id'] ?? null;
+    
+    if (!$userId) {
+      return $this->json(['error' => 'Invalid user'], 401);
+    }
     
     if (!isset($_FILES['avatar'])) {
       return $this->json(['error' => 'No file uploaded'], 400);
@@ -29,7 +34,7 @@ class UploadController extends Controller {
     
     // Generate unique filename
     $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-    $filename = 'avatar_' . $user['id'] . '_' . time() . '.' . $ext;
+    $filename = 'avatar_' . $userId . '_' . time() . '.' . $ext;
     $filepath = $uploadDir . $filename;
     
     if (!move_uploaded_file($file['tmp_name'], $filepath)) {

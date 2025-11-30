@@ -77,6 +77,31 @@ $router->get('/api/v1/bookings/{id}/payment', 'App\\Controllers\\PaymentControll
 // Upload routes
 $router->post('/api/v1/upload/avatar', 'App\\Controllers\\UploadController@uploadAvatar');
 
+// Admin routes
+$router->get('/api/v1/admin/stats', 'App\\Controllers\\AdminController@stats');
+$router->get('/api/v1/admin/salons', 'App\\Controllers\\AdminController@salons');
+$router->put('/api/v1/admin/salons/{id}', 'App\\Controllers\\AdminController@updateSalon');
+$router->get('/api/v1/admin/bookings', 'App\\Controllers\\AdminController@bookings');
+$router->get('/api/v1/admin/bookings/{id}', 'App\\Controllers\\AdminController@bookingDetail');
+$router->get('/api/v1/admin/payments', 'App\\Controllers\\AdminController@payments');
+$router->get('/api/v1/admin/payments/{id}', 'App\\Controllers\\AdminController@paymentDetail');
+$router->get('/api/v1/admin/users', 'App\\Controllers\\AdminController@users');
+
+// News routes
+$router->get('/api/v1/news', 'App\\Controllers\\NewsController@list');
+$router->post('/api/v1/admin/news', 'App\\Controllers\\NewsController@create');
+$router->put('/api/v1/admin/news/{id}', 'App\\Controllers\\NewsController@update');
+$router->delete('/api/v1/admin/news/{id}', 'App\\Controllers\\NewsController@delete');
+
+// Chat routes - FIXED routes first, then dynamic routes
+$router->get('/api/v1/chats/conversations', 'App\\Controllers\\ChatController@listConversations');
+$router->get('/api/v1/chats/total-unread', 'App\\Controllers\\ChatController@getTotalUnread');
+$router->post('/api/v1/chats/{salon_id}/start', 'App\\Controllers\\ChatController@startConversation');
+$router->get('/api/v1/chats/{conversation_id}/messages', 'App\\Controllers\\ChatController@getMessages');
+$router->post('/api/v1/chats/{conversation_id}/messages', 'App\\Controllers\\ChatController@sendMessage');
+$router->get('/api/v1/chats/{conversation_id}/unread-count', 'App\\Controllers\\ChatController@getUnreadCount');
+$router->put('/api/v1/chats/{message_id}/read', 'App\\Controllers\\ChatController@markAsRead');
+
 // Debug routes
 $router->get('/api/v1/debug/headers', 'App\\Controllers\\DebugController@headers');
 

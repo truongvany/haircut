@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import type { Payment } from '../../api/payments';
 import { listPayments } from '../../api/payments';
+import { useUser } from '../../hooks/useUser';
 import '../../components/PaymentHistory.css';
 
 export default function PaymentPage() {
+  const { user } = useUser();
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -14,11 +16,9 @@ export default function PaymentPage() {
       try {
         setLoading(true);
         const { items } = await listPayments();
-        console.log('Payments loaded:', items); // Debug log
         setPayments(items);
         setError(null);
       } catch (err: any) {
-        console.error('Error loading payments:', err); // Debug log
         setError(err?.response?.data?.error || 'Không thể tải danh sách thanh toán');
       } finally {
         setLoading(false);
@@ -120,7 +120,10 @@ export default function PaymentPage() {
                 <div key={payment.payment_id} className="payment-card">
                   <div className="payment-card-header">
                     <div className="payment-card-title">
-                      <span className="salon-name">{payment.salon_name || `[MISSING SALON NAME - ID: ${payment.booking_id}]`}</span>
+                      <span className="salon-name">
+                        {user?.role === 'salon' ? payment.customer_name : payment.salon_name} 
+                        {user?.role === 'salon' ? ` (${payment.salon_name})` : ''}
+                      </span>
                       <span className="payment-id">#Pay{payment.payment_id}</span>
                     </div>
                     <div className="payment-card-status">

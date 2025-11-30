@@ -4,8 +4,8 @@ import { setAuth } from "../../store/auth";
 import "../../components/login.css";
 
 export default function Login() {
-  const [email, setEmail] = useState("owner@haircut.test");
-  const [password, setPassword] = useState("123456");
+  const [email, setEmail] = useState("admin@haircut.test");
+  const [password, setPassword] = useState("admin123");
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
 
@@ -17,7 +17,7 @@ export default function Login() {
     try {
       const { data } = await api.post("/v1/auth/login", { email, password });
       setAuth(data.token, data.user);
-      location.href = "/services";
+      location.href = "/";
     } catch (e: any) {
       setErr(e?.response?.data?.error || "Đăng nhập thất bại");
     } finally {

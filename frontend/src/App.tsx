@@ -5,7 +5,7 @@ import Login from "./pages/Account/login";
 import RegisterPage from "./pages/Account/Register";
 import ServicesPage from "./pages/Services/Services";
 import SalonsPage from "./pages/Salon/Salons";
-import ProtectedRoute from "./components/ProtectedRoute";
+import ProtectedRoute from "./pages/ProtectedRoute";
 import Forbidden from "./pages/Forbidden";
 import StylistsPage from "./pages/Stylists/Stylists";
 import BookingsPage from "./pages/Booking/Bookings";
@@ -19,7 +19,15 @@ const NewBookingPage = lazy(() => import('./pages/Booking/NewBooking'));
 const AccountPage = lazy(() => import('./pages/Account/Account'));
 const NewsPage = lazy(() => import('./pages/New/NewsPage'));
 const PaymentPage = lazy(() => import('./pages/Payment/PaymentPage'));
-const PaymentDebugPage = lazy(() => import('./pages/Payment/PaymentDebug'));
+const SupportChatPage = lazy(() => import('./pages/Support/SupportChat'));
+const AdminDashboard = lazy(() => import('./pages/Admin/AdminDashboard'));
+const AdminSalons = lazy(() => import('./pages/Admin/AdminSalons'));
+const AdminBookings = lazy(() => import('./pages/Admin/AdminBookings'));
+const AdminBookingDetail = lazy(() => import('./pages/Admin/AdminBookingDetail'));
+const AdminPayments = lazy(() => import('./pages/Admin/AdminPayments'));
+const AdminPaymentDetail = lazy(() => import('./pages/Admin/AdminPaymentDetail'));
+const AdminUsers = lazy(() => import('./pages/Admin/AdminUsers'));
+const AdminNews = lazy(() => import('./pages/Admin/AdminNews'));
 
 import { isLoggedIn, clearAuth } from "./store/auth";
 import { getMe } from "./api/user";
@@ -34,8 +42,7 @@ export default function App() {
         .then(userProfile => {
           setCurrentUser(userProfile);
         })
-        .catch(err => {
-          console.error("Failed to fetch user profile:", err);
+        .catch(() => {
           clearAuth();
         })
         .finally(() => {
@@ -58,15 +65,16 @@ export default function App() {
         <header className={styles.header}>
           <Link to="/" className={styles.logo}>Haircut</Link>
           <nav>
-            <Link className={styles.navLink} to="/">Trang Chủ</Link>
+            <Link className={styles.navLink} to="/">Trang Chủ</Link>
             <Link className={styles.navLink} to="/salons">Salons</Link>
-            <Link className={styles.navLink} to="/services">Services</Link>
-            <Link className={styles.navLink} to="/stylists">Stylists</Link>
-            <Link className={styles.navLink} to="/bookings">Bookings</Link>
-            <Link className={styles.navLink} to="/new-booking">Đặt lịch mới</Link>
-            <Link className={styles.navLink} to="/payments">Thanh toán</Link>
-            <Link className={styles.navLink} to="/History">Lịch sử</Link>
+            {u?.role === 'salon' && <Link className={styles.navLink} to="/services">Services</Link>}
+            {u?.role === 'salon' && <Link className={styles.navLink} to="/stylists">Stylists</Link>}
+            {u?.role === 'salon' && <Link className={styles.navLink} to="/bookings">Bookings</Link>}
+            {u?.role === 'customer' && <Link className={styles.navLink} to="/new-booking">Đặt lịch mới</Link>}
+            {u?.role !== 'admin' && <Link className={styles.navLink} to="/payments">Thanh toán</Link>}
+            {u?.role !== 'admin' && <Link className={styles.navLink} to="/History">Lịch sử</Link>}
             <Link className={styles.navLink} to="/support">Hỗ trợ</Link>
+            {u?.role === 'admin' && <Link className={styles.navLink} to="/admin">Quản Lý</Link>}
             <Link className={styles.navLink} to="/account">Tài khoản</Link>
           </nav>
 
@@ -129,7 +137,7 @@ export default function App() {
             <Route
               path="/services"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allow={['admin', 'salon']}>
                   <ServicesPage />
                 </ProtectedRoute>
               }
@@ -169,7 +177,7 @@ export default function App() {
             <Route
               path="/new-booking"
               element={
-                <ProtectedRoute allow={['admin', 'salon', 'customer']}>
+                <ProtectedRoute allow={['admin', 'customer']}>
                   <Suspense fallback={<div>Đang tải trang đặt lịch...</div>}>
                     <NewBookingPage />
                   </Suspense>
@@ -186,8 +194,100 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
-            <Route path="/payment-debug" element={<Suspense fallback={<div>Loading...</div>}><PaymentDebugPage /></Suspense>} />
+            <Route
+              path="/support"
+              element={
+                <ProtectedRoute allow={['customer','admin','salon']}>
+                  <Suspense fallback={<div>Đang tải trang hỗ trợ...</div>}>
+                    <SupportChatPage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
             <Route path="/403" element={<Forbidden />} />
+            
+            {/* Admin Routes */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute allow={['admin']}>
+                  <Suspense fallback={<div>Đang tải dashboard...</div>}>
+                    <AdminDashboard />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/salons"
+              element={
+                <ProtectedRoute allow={['admin']}>
+                  <Suspense fallback={<div>Đang tải...</div>}>
+                    <AdminSalons />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/bookings"
+              element={
+                <ProtectedRoute allow={['admin']}>
+                  <Suspense fallback={<div>Đang tải...</div>}>
+                    <AdminBookings />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/payments"
+              element={
+                <ProtectedRoute allow={['admin']}>
+                  <Suspense fallback={<div>Đang tải...</div>}>
+                    <AdminPayments />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/payments/:id"
+              element={
+                <ProtectedRoute allow={['admin']}>
+                  <Suspense fallback={<div>Đang tải...</div>}>
+                    <AdminPaymentDetail />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/users"
+              element={
+                <ProtectedRoute allow={['admin']}>
+                  <Suspense fallback={<div>Đang tải...</div>}>
+                    <AdminUsers />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/news"
+              element={
+                <ProtectedRoute allow={['admin']}>
+                  <Suspense fallback={<div>Đang tải...</div>}>
+                    <AdminNews />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/bookings/:id"
+              element={
+                <ProtectedRoute allow={['admin', 'salon']}>
+                  <Suspense fallback={<div>Đang tải...</div>}>
+                    <AdminBookingDetail />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+            
             <Route
               path="/salons/:id"
               element={

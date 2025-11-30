@@ -190,6 +190,7 @@ class SalonController extends Controller {
     $phone = trim($body['phone'] ?? '');
     $email = trim($body['email'] ?? '');
     $description = trim($body['description'] ?? '');
+    $avatar = trim($body['avatar'] ?? '');
     $openTime = trim($body['open_time'] ?? '08:00:00');
     $closeTime = trim($body['close_time'] ?? '21:00:00');
 
@@ -206,8 +207,8 @@ class SalonController extends Controller {
     }
 
     // Update
-    $upd = $pdo->prepare("UPDATE salons SET name = ?, description = ?, phone = ?, email = ?, address_text = ?, open_time = ?, close_time = ? WHERE id = ?");
-    $upd->execute([$name, $description, $phone, $email, $address, $openTime, $closeTime, $id]);
+    $upd = $pdo->prepare("UPDATE salons SET name = ?, description = ?, phone = ?, email = ?, address_text = ?, avatar = ?, open_time = ?, close_time = ? WHERE id = ?");
+    $upd->execute([$name, $description, $phone, $email, $address, $avatar, $openTime, $closeTime, $id]);
 
     return $this->json(['message' => 'Cập nhật salon thành công']);
   }

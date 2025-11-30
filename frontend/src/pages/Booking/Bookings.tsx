@@ -88,7 +88,6 @@ export default function BookingsPage() {
         setBookings([]);
       }
     } catch (e: any) {
-      console.error("Lỗi tải lịch hẹn:", e);
       setError(e?.response?.data?.error || "Không thể tải lịch hẹn");
       setBookings([]);
     } finally {

@@ -53,7 +53,7 @@ export default function StylistsPage() {
           setSalonId(data.items[0].id);
         }
       } catch (e) {
-        console.error("Không thể tải danh sách salon:", e);
+        // silently fail
       }
     })();
   }, [user]);
@@ -72,7 +72,6 @@ export default function StylistsPage() {
       setItems(data.items);
       setTotal(data.total);
     } catch (e: any) {
-      console.error("Lỗi tải stylists:", e);
       alert(e?.response?.data?.error || "Không thể tải danh sách stylist");
     } finally {
       setLoading(false);

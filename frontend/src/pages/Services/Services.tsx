@@ -55,7 +55,7 @@ export default function ServicesPage() {
           setSalonId(data.items[0].id);
         }
       } catch (e) {
-        console.error("Không thể tải danh sách salon:", e);
+        // silently fail
       }
     })();
   }, [user]);
@@ -74,7 +74,6 @@ export default function ServicesPage() {
       setItems(data.items);
       setTotal(data.total);
     } catch (e: any) {
-      console.error("Lỗi tải dịch vụ:", e);
       alert(e?.response?.data?.error || "Không thể tải danh sách dịch vụ");
     } finally {
       setLoading(false);

@@ -464,7 +464,13 @@ export default function SalonsPage(){
             {items.map(s => (
               <li key={s.id} className="salon-card">
                 <Link to={`/salons/${s.id}`} className="salon-link">
-                  <div className="salon-icon"></div>
+                  <div className="salon-icon">
+                    {s.avatar ? (
+                      <img src={s.avatar} alt={s.name} style={{ width: '100%', height: '100%', borderRadius: '8px', objectFit: 'cover' }} />
+                    ) : (
+                      '✂️'
+                    )}
+                  </div>
                   <div className="salon-name">{s.name}</div>
                   <div className="salon-address">{s.address_text ?? ''}</div>
                   {s.open_time && s.close_time && (

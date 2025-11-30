@@ -60,12 +60,10 @@ async function onUpdate(e:any){
       formData.append('avatar', avatarFile);
       
       try {
-        const uploadRes = await api.post('/v1/upload/avatar', formData, { 
-         headers: { 'Content-Type': 'multipart/form-data' }
-      });
+        const uploadRes = await api.post('/v1/upload/avatar', formData);
         avatarUrl = uploadRes.data.url || uploadRes.data.path || avatarUrl;
       } catch (uploadErr) {
-        console.error('Avatar upload failed, using URL instead:', uploadErr);
+        // silently fail
       }
     }
 

@@ -248,22 +248,54 @@ class PaymentController extends Controller {
     $pdo = DB::pdo();
     $bookingId = isset($_GET['booking_id']) ? (int)$_GET['booking_id'] : null;
 
-    $query = "
-      SELECT p.id, p.booking_id, p.method, p.status, p.amount, p.created_at, p.updated_at,
-             b.customer_id, s.name as salon_name
-      FROM payments p
-      JOIN bookings b ON p.booking_id = b.id
-      JOIN salons s ON b.salon_id = s.id
-      WHERE b.customer_id = ?
-    ";
-    $params = [(int)$me['uid']];
+    // If user is a salon owner, show payments for their salon
+    // Otherwise, show payments for their own bookings (customer)
+    if ($me['role'] === 'salon') {
+      // Get salon owner's salon
+      $st = $pdo->prepare("SELECT id FROM salons WHERE owner_user_id = ? LIMIT 1");
+      $st->execute([(int)$me['uid']]);
+      $salon = $st->fetch(\PDO::FETCH_ASSOC);
 
-    if ($bookingId) {
-      $query .= " AND p.booking_id = ?";
-      $params[] = $bookingId;
+      if (!$salon) {
+        return $this->json(['items' => []]);
+      }
+
+      $query = "
+        SELECT p.id, p.booking_id, p.method, p.status, p.amount, p.created_at, p.updated_at,
+               b.customer_id, u.full_name as customer_name, s.name as salon_name
+        FROM payments p
+        JOIN bookings b ON p.booking_id = b.id
+        JOIN salons s ON b.salon_id = s.id
+        JOIN users u ON b.customer_id = u.id
+        WHERE b.salon_id = ?
+      ";
+      $params = [(int)$salon['id']];
+
+      if ($bookingId) {
+        $query .= " AND p.booking_id = ?";
+        $params[] = $bookingId;
+      }
+
+      $query .= " ORDER BY p.created_at DESC LIMIT 100";
+    } else {
+      // Customer: show their own payments
+      $query = "
+        SELECT p.id, p.booking_id, p.method, p.status, p.amount, p.created_at, p.updated_at,
+               b.customer_id, s.name as salon_name
+        FROM payments p
+        JOIN bookings b ON p.booking_id = b.id
+        JOIN salons s ON b.salon_id = s.id
+        WHERE b.customer_id = ?
+      ";
+      $params = [(int)$me['uid']];
+
+      if ($bookingId) {
+        $query .= " AND p.booking_id = ?";
+        $params[] = $bookingId;
+      }
+
+      $query .= " ORDER BY p.created_at DESC LIMIT 100";
     }
-
-    $query .= " ORDER BY p.created_at DESC LIMIT 100";
 
     $st = $pdo->prepare($query);
     $st->execute($params);
@@ -277,6 +309,7 @@ class PaymentController extends Controller {
         'status' => $p['status'],
         'amount' => (int)$p['amount'],
         'salon_name' => $p['salon_name'],
+        'customer_name' => $p['customer_name'] ?? null,
         'created_at' => $p['created_at'],
         'updated_at' => $p['updated_at']
       ];

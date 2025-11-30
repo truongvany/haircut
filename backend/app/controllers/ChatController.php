@@ -8,35 +8,162 @@ use App\Core\Auth;
 class ChatController extends Controller
 {
     // POST /api/v1/chats/{salon_id}/start
-    // Start or get existing conversation with a salon
+    // Start or get existing conversation with a salon, or with support
     public function startConversation(array $params)
     {
-        $me = Auth::user();
-        if (!$me || !isset($me['uid'])) {
-            return $this->json(['error' => 'Unauthorized'], 401);
-        }
+        try {
+            error_log("=== START CONVERSATION REQUEST ===");
+            error_log("Params: " . json_encode($params));
+            
+            $me = Auth::user();
+            error_log("Authenticated user: " . json_encode($me));
+            
+            if (!$me || !isset($me['uid'])) {
+                error_log("Authentication failed");
+                return $this->json(['error' => 'Unauthorized'], 401);
+            }
 
-        $salonId = (int)($params['salon_id'] ?? 0);
-        if ($salonId <= 0) {
-            return $this->json(['error' => 'Invalid salon ID'], 400);
-        }
+            $salonId = (int)($params['salon_id'] ?? 0);
+            error_log("Salon ID: $salonId");
+            
+            $pdo = DB::pdo();
+            $userId = (int)$me['uid'];
+            $userRole = $me['role'] ?? '';
+            
+            error_log("User ID: $userId, Role: $userRole");
 
-        $pdo = DB::pdo();
-        $userId = (int)$me['uid'];
-        $userRole = $me['role'] ?? '';
+            // Check if support_user_id column exists
+            $result = $pdo->query("DESCRIBE conversations");
+            $columns = $result->fetchAll(\PDO::FETCH_COLUMN, 0);
+            $hasSupport = in_array('support_user_id', $columns);
+            
+            error_log("Support column exists: " . ($hasSupport ? 'yes' : 'no'));
 
-        // Verify salon exists
-        $salonCheck = $pdo->prepare("SELECT id, owner_user_id FROM salons WHERE id = ?");
-        $salonCheck->execute([$salonId]);
-        $salon = $salonCheck->fetch(\PDO::FETCH_ASSOC);
-        
-        if (!$salon) {
-            return $this->json(['error' => 'Salon not found'], 404);
-        }
+            // Determine customer_id and target (salon or support)
+            if ($userRole === 'customer') {
+                $customerId = $userId;
+                error_log("Customer ID: $customerId");
+                
+                if ($salonId > 0) {
+                    error_log("Creating salon conversation");
+                    // Chat with specific salon
+                    $salonCheck = $pdo->prepare("SELECT id FROM salons WHERE id = ?");
+                    $salonCheck->execute([$salonId]);
+                    if (!$salonCheck->fetch()) {
+                        error_log("Salon not found: $salonId");
+                        return $this->json(['error' => 'Salon not found'], 404);
+                    }
+                    error_log("Salon verified");
 
-        // Determine customer_id based on role
-        if ($userRole === 'customer') {
-            $customerId = $userId;
+                    // Check if conversation already exists
+                    if ($hasSupport) {
+                        $stmt = $pdo->prepare("
+                            SELECT id, customer_id, salon_id, support_user_id, last_message_at, created_at 
+                            FROM conversations 
+                            WHERE customer_id = ? AND salon_id = ? AND support_user_id IS NULL
+                        ");
+                    } else {
+                        $stmt = $pdo->prepare("
+                            SELECT id, customer_id, salon_id, last_message_at, created_at 
+                            FROM conversations 
+                            WHERE customer_id = ? AND salon_id = ?
+                        ");
+                    }
+                    $stmt->execute([$customerId, $salonId]);
+                    $conversation = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+                    if ($conversation) {
+                        error_log("Returning existing conversation: " . $conversation['id']);
+                        return $this->json(['conversation' => $conversation]);
+                    }
+
+                    error_log("Inserting new conversation");
+                    // Create new salon conversation
+                    try {
+                        if ($hasSupport) {
+                            $insert = $pdo->prepare("
+                                INSERT INTO conversations (customer_id, salon_id, support_user_id) 
+                                VALUES (?, ?, NULL)
+                            ");
+                            $insert->execute([$customerId, $salonId]);
+                        } else {
+                            $insert = $pdo->prepare("
+                                INSERT INTO conversations (customer_id, salon_id) 
+                                VALUES (?, ?)
+                            ");
+                            $insert->execute([$customerId, $salonId]);
+                        }
+                        
+                        $conversationId = (int)$pdo->lastInsertId();
+                        error_log("New conversation created: $conversationId");
+
+                        if ($hasSupport) {
+                            $newConv = $pdo->prepare("SELECT id, customer_id, salon_id, support_user_id, last_message_at, created_at FROM conversations WHERE id = ?");
+                        } else {
+                            $newConv = $pdo->prepare("SELECT id, customer_id, salon_id, last_message_at, created_at FROM conversations WHERE id = ?");
+                        }
+                        $newConv->execute([$conversationId]);
+                        $conversation = $newConv->fetch(\PDO::FETCH_ASSOC);
+
+                        error_log("Returning new conversation: " . json_encode($conversation));
+                        return $this->json(['conversation' => $conversation], 201);
+                    } catch (\PDOException $e) {
+                        error_log("Database error: " . $e->getMessage());
+                        return $this->json(['error' => 'Failed to create conversation: ' . $e->getMessage()], 500);
+                    }
+                } else {
+                    return $this->json(['error' => 'Support feature not available. Run setup_chat_complete.php'], 503);
+                }
+                
+                // Get support user
+                $supportStmt = $pdo->prepare("SELECT id FROM users WHERE role_id = 1 LIMIT 1");
+                $supportStmt->execute();
+                $support = $supportStmt->fetch(\PDO::FETCH_ASSOC);
+
+                if (!$support) {
+                    return $this->json(['error' => 'Support account not found'], 404);
+                }
+
+                $supportId = (int)$support['id'];
+
+                // Check if conversation already exists
+                $stmt = $pdo->prepare("
+                    SELECT id, customer_id, salon_id, support_user_id, last_message_at, created_at 
+                    FROM conversations 
+                    WHERE customer_id = ? AND support_user_id = ?
+                ");
+                $stmt->execute([$customerId, $supportId]);
+                $conversation = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+                if ($conversation) {
+                    return $this->json(['conversation' => $conversation]);
+                }
+
+                // Create new support conversation
+                try {
+                    $insert = $pdo->prepare("
+                        INSERT INTO conversations (customer_id, salon_id, support_user_id) 
+                        VALUES (?, NULL, ?)
+                    ");
+                    $insert->execute([$customerId, $supportId]);
+                    $conversationId = (int)$pdo->lastInsertId();
+
+                    $newConv = $pdo->prepare("SELECT id, customer_id, salon_id, support_user_id, last_message_at, created_at FROM conversations WHERE id = ?");
+                    $newConv->execute([$conversationId]);
+                    $conversation = $newConv->fetch(\PDO::FETCH_ASSOC);
+
+                    // Send initial support message
+                    $supportMessage = "Xin chào! 👋 Tôi là Support Team của Haircut. Bạn cần hỗ trợ gì không?";
+                    $insertMsg = $pdo->prepare("
+                        INSERT INTO messages (conversation_id, sender_id, message_text)
+                        VALUES (?, ?, ?)
+                    ");
+                    $insertMsg->execute([$conversationId, $supportId, $supportMessage]);
+
+                    return $this->json(['conversation' => $conversation], 201);
+                } catch (\PDOException $e) {
+                    return $this->json(['error' => 'Failed to create support conversation: ' . $e->getMessage()], 500);
+                }
         } elseif ($userRole === 'salon' || $userRole === 'admin') {
             // Salon owner accessing their own conversations
             // For now, we'll require a customer_id in the request body
@@ -45,36 +172,64 @@ class ChatController extends Controller
             if ($customerId <= 0) {
                 return $this->json(['error' => 'Customer ID required for salon users'], 400);
             }
+
+            if ($salonId <= 0) {
+                return $this->json(['error' => 'Invalid salon ID'], 400);
+            }
+
+            // Check if conversation already exists
+            if ($hasSupport) {
+                $stmt = $pdo->prepare("
+                    SELECT id, customer_id, salon_id, support_user_id, last_message_at, created_at 
+                    FROM conversations 
+                    WHERE customer_id = ? AND salon_id = ?
+                ");
+            } else {
+                $stmt = $pdo->prepare("
+                    SELECT id, customer_id, salon_id, last_message_at, created_at 
+                    FROM conversations 
+                    WHERE customer_id = ? AND salon_id = ?
+                ");
+            }
+            $stmt->execute([$customerId, $salonId]);
+            $conversation = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+            if ($conversation) {
+                return $this->json(['conversation' => $conversation]);
+            }
+
+            // Create new conversation
+            if ($hasSupport) {
+                $insert = $pdo->prepare("
+                    INSERT INTO conversations (customer_id, salon_id, support_user_id) 
+                    VALUES (?, ?, NULL)
+                ");
+                $insert->execute([$customerId, $salonId]);
+            } else {
+                $insert = $pdo->prepare("
+                    INSERT INTO conversations (customer_id, salon_id) 
+                    VALUES (?, ?)
+                ");
+                $insert->execute([$customerId, $salonId]);
+            }
+
+            $conversationId = (int)$pdo->lastInsertId();
+
+            if ($hasSupport) {
+                $newConv = $pdo->prepare("SELECT id, customer_id, salon_id, support_user_id, last_message_at, created_at FROM conversations WHERE id = ?");
+            } else {
+                $newConv = $pdo->prepare("SELECT id, customer_id, salon_id, last_message_at, created_at FROM conversations WHERE id = ?");
+            }
+            $newConv->execute([$conversationId]);
+            $conversation = $newConv->fetch(\PDO::FETCH_ASSOC);
+
+            return $this->json(['conversation' => $conversation], 201);
         } else {
             return $this->json(['error' => 'Invalid user role'], 403);
         }
-
-        // Check if conversation already exists
-        $stmt = $pdo->prepare("
-            SELECT id, customer_id, salon_id, last_message_at, created_at 
-            FROM conversations 
-            WHERE customer_id = ? AND salon_id = ?
-        ");
-        $stmt->execute([$customerId, $salonId]);
-        $conversation = $stmt->fetch(\PDO::FETCH_ASSOC);
-
-        if ($conversation) {
-            return $this->json(['conversation' => $conversation]);
+        } catch (\Exception $e) {
+            return $this->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
         }
-
-        // Create new conversation
-        $insert = $pdo->prepare("
-            INSERT INTO conversations (customer_id, salon_id) 
-            VALUES (?, ?)
-        ");
-        $insert->execute([$customerId, $salonId]);
-        $conversationId = (int)$pdo->lastInsertId();
-
-        $newConv = $pdo->prepare("SELECT id, customer_id, salon_id, last_message_at, created_at FROM conversations WHERE id = ?");
-        $newConv->execute([$conversationId]);
-        $conversation = $newConv->fetch(\PDO::FETCH_ASSOC);
-
-        return $this->json(['conversation' => $conversation], 201);
     }
 
     // GET /api/v1/chats/conversations
@@ -91,14 +246,25 @@ class ChatController extends Controller
         $userRole = $me['role'] ?? '';
 
         if ($userRole === 'customer') {
-            // Get conversations where user is customer
+            // Get conversations where user is customer (both salon and support)
             $stmt = $pdo->prepare("
-                SELECT c.id, c.customer_id, c.salon_id, c.last_message_at, c.created_at,
-                       s.name AS salon_name, s.avatar_url AS salon_avatar
+                SELECT c.id, c.customer_id, c.salon_id, 
+                       COALESCE(c.support_user_id, 0) AS support_user_id,
+                       c.last_message_at, c.created_at,
+                       CASE 
+                           WHEN c.salon_id IS NOT NULL THEN s.name
+                           ELSE u.full_name
+                       END AS target_name,
+                       CASE 
+                           WHEN c.salon_id IS NOT NULL THEN s.id
+                           ELSE u.id
+                       END AS target_id,
+                       CASE WHEN c.salon_id IS NOT NULL THEN 'salon' ELSE 'support' END AS conversation_type
                 FROM conversations c
-                JOIN salons s ON c.salon_id = s.id
+                LEFT JOIN salons s ON c.salon_id = s.id
+                LEFT JOIN users u ON c.support_user_id = u.id
                 WHERE c.customer_id = ?
-                ORDER BY c.last_message_at DESC, c.created_at DESC
+                ORDER BY COALESCE(c.last_message_at, c.created_at) DESC
             ");
             $stmt->execute([$userId]);
         } elseif ($userRole === 'salon') {
@@ -113,24 +279,38 @@ class ChatController extends Controller
 
             // Get conversations for this salon
             $stmt = $pdo->prepare("
-                SELECT c.id, c.customer_id, c.salon_id, c.last_message_at, c.created_at,
-                       u.full_name AS customer_name, u.avatar_url AS customer_avatar
+                SELECT c.id, c.customer_id, c.salon_id, 
+                       COALESCE(c.support_user_id, 0) AS support_user_id,
+                       c.last_message_at, c.created_at,
+                       u.full_name AS customer_name,
+                       'salon' AS conversation_type
                 FROM conversations c
                 JOIN users u ON c.customer_id = u.id
                 WHERE c.salon_id = ?
-                ORDER BY c.last_message_at DESC, c.created_at DESC
+                ORDER BY COALESCE(c.last_message_at, c.created_at) DESC
             ");
             $stmt->execute([$salon['id']]);
-        } else {
-            // Admin can see all
-            $stmt = $pdo->query("
-                SELECT c.id, c.customer_id, c.salon_id, c.last_message_at, c.created_at,
-                       u.full_name AS customer_name, s.name AS salon_name
+        } elseif ($userRole === 'admin') {
+            // Admin can see all conversations
+            $stmt = $pdo->prepare("
+                SELECT c.id, c.customer_id, c.salon_id, 
+                       COALESCE(c.support_user_id, 0) AS support_user_id,
+                       c.last_message_at, c.created_at,
+                       CASE 
+                           WHEN c.salon_id IS NOT NULL THEN s.name
+                           WHEN c.support_user_id IS NOT NULL THEN 'Support'
+                           ELSE 'Chat'
+                       END AS target_name,
+                       u.full_name AS customer_name,
+                       CASE WHEN c.salon_id IS NOT NULL THEN 'salon' ELSE 'support' END AS conversation_type
                 FROM conversations c
                 JOIN users u ON c.customer_id = u.id
-                JOIN salons s ON c.salon_id = s.id
-                ORDER BY c.last_message_at DESC, c.created_at DESC
+                LEFT JOIN salons s ON c.salon_id = s.id
+                ORDER BY COALESCE(c.last_message_at, c.created_at) DESC
             ");
+            $stmt->execute();
+        } else {
+            return $this->json(['conversations' => []]);
         }
 
         $conversations = $stmt->fetchAll(\PDO::FETCH_ASSOC);
@@ -360,9 +540,9 @@ class ChatController extends Controller
 
         // Get conversation details
         $stmt = $pdo->prepare("
-            SELECT c.customer_id, c.salon_id, s.owner_user_id
+            SELECT c.customer_id, c.salon_id, c.support_user_id, s.owner_user_id
             FROM conversations c
-            JOIN salons s ON c.salon_id = s.id
+            LEFT JOIN salons s ON c.salon_id = s.id
             WHERE c.id = ?
         ");
         $stmt->execute([$conversationId]);
@@ -372,7 +552,12 @@ class ChatController extends Controller
             return false;
         }
 
-        // User can access if they are the customer or the salon owner
-        return ($userId === (int)$conv['customer_id']) || ($userId === (int)$conv['owner_user_id']);
+        // User can access if they are:
+        // 1. The customer in the conversation, OR
+        // 2. The salon owner (if it's a salon conversation), OR
+        // 3. The support user (if it's a support conversation)
+        return ($userId === (int)$conv['customer_id']) 
+            || ($conv['salon_id'] && $userId === (int)$conv['owner_user_id'])
+            || ($conv['support_user_id'] && $userId === (int)$conv['support_user_id']);
     }
 }

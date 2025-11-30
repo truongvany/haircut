@@ -30,7 +30,6 @@ const formatDateTime = (dateTimeString: string): string => {
       minute: '2-digit'
     });
   } catch (e) {
-    console.error("Error formatting datetime:", e);
     return 'N/A';
   }
 };
@@ -68,7 +67,7 @@ export default function BookingHistoryPage(){
 
       setReviewsMap(reviews);
     } catch (err) {
-      console.error('Error checking reviews:', err);
+      // silently fail
     }
   }
 
@@ -76,12 +75,9 @@ export default function BookingHistoryPage(){
     setLoading(true);
     setError(null);
     try{
-      console.log('🔍 Calling listMyBookings...');
       const res = await listMyBookings();
-      console.log('✅ Raw response:', res);
       
       if (!res.items || res.items.length === 0) {
-        console.warn('⚠️ No bookings found');
         setBookings([]);
       } else {
         // Sort by appointment time
@@ -90,11 +86,9 @@ export default function BookingHistoryPage(){
           const dateB = parseDateTime(b.appointmentAt);
           return dateA.getTime() - dateB.getTime();
         });
-        console.log('✅ Sorted bookings:', sorted);
         setBookings(sorted);
       }
     }catch(e:any){
-      console.error('❌ Error:', e);
       setError(e?.response?.data?.error || 'Không thể tải lịch sử');
       setBookings([]);
     }finally{ 

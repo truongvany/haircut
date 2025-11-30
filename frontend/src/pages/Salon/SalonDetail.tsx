@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../api/client';
+import { startConversation } from '../../api/chat';
 import '../../components/SalonDetail.css';
 
 interface Salon {
@@ -10,6 +11,7 @@ interface Salon {
   phone: string;
   email: string;
   description: string;
+  avatar?: string;
   open_time: string;
   close_time: string;
   rating_avg: string | number;
@@ -44,6 +46,7 @@ interface Review {
 
 export default function SalonDetailPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [salon, setSalon] = useState<Salon | null>(null);
   const [services, setServices] = useState<Service[]>([]);
   const [stylists, setStylists] = useState<Stylist[]>([]);
@@ -106,12 +109,37 @@ export default function SalonDetailPage() {
   const salonRating = toNumber(salon.rating_avg);
   const salonRatingCount = toNumber(salon.rating_count);
 
+  const handleStartChat = async () => {
+    try {
+      const response = await startConversation(parseInt(id!));
+      
+      const conversation = response.conversation;
+      
+      if (!conversation || !conversation.id) {
+        alert("Không thể tạo conversation. Vui lòng thử lại.");
+        return;
+      }
+
+      localStorage.setItem('selectedConversationId', conversation.id.toString());
+      navigate('/support');
+    } catch (error: any) {
+      const errorMsg = error?.response?.data?.error || "Không thể bắt đầu cuộc hội thoại. Vui lòng thử lại.";
+      alert(errorMsg);
+    }
+  };
+
   return (
     <div className="salon-detail-page">
       {/* Header Section */}
       <div className="salon-header">
         <div className="salon-header-content">
-          <div className="salon-icon">✂️</div>
+          <div className="salon-icon">
+            {salon.avatar ? (
+              <img src={salon.avatar} alt={salon.name} style={{ width: '60px', height: '60px', borderRadius: '8px', objectFit: 'cover' }} />
+            ) : (
+              '✂️'
+            )}
+          </div>
           <div className="salon-title-section">
             <h1 className="salon-title">{salon.name}</h1>
             <div className="salon-rating">
@@ -119,6 +147,9 @@ export default function SalonDetailPage() {
               <span className="rating-text">{salonRating.toFixed(1)} ({salonRatingCount} đánh giá)</span>
             </div>
           </div>
+          <button className="chat-btn" onClick={handleStartChat}>
+            💬 Chat với salon này
+          </button>
         </div>
       </div>
 

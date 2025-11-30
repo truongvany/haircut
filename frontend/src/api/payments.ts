@@ -11,6 +11,7 @@ export interface Payment {
   created_at: string;
   updated_at: string;
   salon_name: string;
+  customer_name?: string;
 }
 
 export interface PaymentResponse {

@@ -19,6 +19,9 @@ export default function EditSalonPage() {
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [description, setDescription] = useState('');
+  const [avatar, setAvatar] = useState('');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState('');
 
   // Load salon data
   useEffect(() => {
@@ -35,6 +38,8 @@ export default function EditSalonPage() {
         setPhone(salon.phone || '');
         setEmail(salon.email || '');
         setDescription(salon.description || '');
+        setAvatar(salon.avatar || '');
+        setAvatarPreview(salon.avatar || '');
       } catch (e: any) {
         setError(e?.response?.data?.error || 'Không thể tải thông tin salon');
       } finally {
@@ -55,12 +60,28 @@ export default function EditSalonPage() {
 
     setSubmitting(true);
     try {
+      let avatarUrl = avatar;
+      
+      // Upload avatar if file selected
+      if (avatarFile) {
+        const formData = new FormData();
+        formData.append('avatar', avatarFile);
+        
+        try {
+          const uploadRes = await api.post('/v1/upload/avatar', formData);
+          avatarUrl = uploadRes.data.url || uploadRes.data.path || avatarUrl;
+        } catch (uploadErr) {
+          // silently fail
+        }
+      }
+
       await api.put(`/v1/salons/${id}`, {
         name,
         address_text: address,
         phone,
         email,
-        description
+        description,
+        avatar: avatarUrl
       });
 
       alert('Cập nhật salon thành công!');
@@ -71,6 +92,19 @@ export default function EditSalonPage() {
       setSubmitting(false);
     }
   };
+
+  function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAvatarFile(file);
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  }
 
   if (loading) return <div>Đang tải...</div>;
   if (error) return <div style={{ color: 'crimson' }}>{error}</div>;
@@ -139,6 +173,44 @@ export default function EditSalonPage() {
                 placeholder="Giới thiệu về salon của bạn..."
                 rows={4}
                 style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #ccc' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem' }}>Logo/Avatar Salon</label>
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                <div style={{ flex: 1 }}>
+                  <input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #ccc' }}
+                    id="salon-avatar-upload"
+                  />
+                  <label htmlFor="salon-avatar-upload" style={{ display: 'block', marginTop: '0.5rem', fontSize: '0.875rem', color: '#666' }}>
+                    📷 Chọn ảnh từ máy tính
+                  </label>
+                </div>
+                {avatarPreview && (
+                  <div style={{ textAlign: 'center' }}>
+                    <img 
+                      src={avatarPreview} 
+                      alt="Preview" 
+                      style={{ maxWidth: '120px', maxHeight: '120px', borderRadius: '8px', border: '1px solid #ddd' }} 
+                    />
+                    <p style={{ fontSize: '0.875rem', color: '#666', marginTop: '0.5rem' }}>Xem trước</p>
+                  </div>
+                )}
+              </div>
+              <input 
+                type="text" 
+                value={avatar}
+                onChange={(e) => {
+                  setAvatar(e.target.value);
+                  setAvatarPreview(e.target.value);
+                }}
+                placeholder="Hoặc nhập URL ảnh..."
+                style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #ccc', marginTop: '0.75rem' }}
               />
             </div>
 

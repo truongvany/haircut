@@ -114,6 +114,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 15px;
 }
 
 .stars {
@@ -125,6 +127,31 @@
   color: rgba(255, 255, 255, 0.95);
   font-size: 1.1rem;
   font-weight: 500;
+}
+
+.chat-btn {
+  background: white;
+  color: #667eea;
+  border: none;
+  padding: 12px 28px;
+  border-radius: 25px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  white-space: nowrap;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.chat-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.chat-btn:active {
+  transform: translateY(0);
 }
 
 /* Container */
@@ -406,6 +433,20 @@
 
   .salon-header-content {
     flex-direction: column;
+    text-align: center;
+    gap: 20px;
+  }
+
+  .salon-icon {
+    margin-bottom: 10px;
+  }
+
+  .salon-title-section {
+    width: 100%;
+  }
+
+  .chat-btn {
+    width: 100%;
     text-align: center;
   }
 

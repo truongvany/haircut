@@ -8,6 +8,15 @@ class Controller {
         echo json_encode($data, JSON_UNESCAPED_UNICODE);
     }
 
+    protected function requireAuth(): array {
+        $user = Auth::user();
+        if (!$user) {
+            $this->json(['error' => 'Unauthorized'], 401);
+            exit;
+        }
+        return $user;
+    }
+
     public function body(): array {
     $raw = file_get_contents('php://input') ?: '';
     $ct  = $_SERVER['CONTENT_TYPE'] ?? '';
